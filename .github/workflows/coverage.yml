@@ -21,12 +21,22 @@ jobs:
       - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Generate coverage
         run: cargo llvm-cov --workspace --all-features --lcov --output-path lcov.info
+      # REQUIRES the CODECOV_TOKEN repository secret. Codecov no longer accepts
+      # tokenless uploads, so without it this step logs
+      #   "Token required - not valid tokenless upload"
+      # and, because fail_ci_if_error is false, still reports success — the job
+      # goes green while uploading nothing, and the codecov.yml thresholds below
+      # never apply to anything. Get the token from
+      # https://app.codecov.io/gh/KadonWills/agent-harness/settings then run:
+      #   gh secret set CODECOV_TOKEN --repo KadonWills/agent-harness
       - name: Upload to Codecov
         uses: codecov/codecov-action@v4
         with:
           files: lcov.info
+          # Keep false only while the token is missing: flipping it to true
+          # before then turns every PR and every push to main red.
           fail_ci_if_error: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 # Thresholds (patch >= 70%, project must not drop >1%) are enforced by
-# codecov via codecov.yml at the repo root.
+# codecov via codecov.yml at the repo root — but only once uploads succeed.

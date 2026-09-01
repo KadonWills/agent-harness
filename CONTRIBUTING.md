@@ -71,7 +71,7 @@ checks — a PR cannot merge with any of them red:
 | MSRV | ci.yml | build fails on the pinned minimum Rust version |
 | PR title | pr-validation.yml | title is not a valid conventional commit |
 | DCO | pr-validation.yml | any commit lacks `Signed-off-by` |
-| Coverage | coverage.yml | patch coverage < 70% or project coverage drops |
+| Coverage | coverage.yml | patch coverage < 70% or project coverage drops — **inactive until the `CODECOV_TOKEN` secret is set**; see the note in `coverage.yml` |
 | Licenses/advisories | security.yml | cargo-deny finds a disallowed license, yanked crate, or advisory |
 | Secrets | security.yml | gitleaks finds a credential in the diff |
 | API breakage | semver.yml | cargo-semver-checks finds an unacknowledged breaking change in a published crate (label `breaking-change` + RFC link to acknowledge) |
