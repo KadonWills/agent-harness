@@ -39,7 +39,7 @@ jobs:
           tar czf "harness-${{ matrix.target }}.tar.gz" "$bin"
           shasum -a 256 "harness-${{ matrix.target }}.tar.gz" > "harness-${{ matrix.target }}.tar.gz.sha256" || \
             sha256sum "harness-${{ matrix.target }}.tar.gz" > "harness-${{ matrix.target }}.tar.gz.sha256"
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: |
             dist/*.tar.gz
