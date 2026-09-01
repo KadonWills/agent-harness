@@ -1,10 +1,21 @@
 name: Semver
 
+# DISABLED until the first crates.io publish — see docs/adr/0005-crate-naming.md.
+#
+# cargo-semver-checks diffs the working tree against the *published* crate of
+# the same name. `harness-core`, `harness-cli`, and `harness-runtime` are all
+# already taken on crates.io by unrelated projects, so this check downloaded a
+# stranger's crate and reported its API as "removed", then hard-errored on
+# `harness-ast`, which is unpublished. The result was noise, not a signal.
+#
+# Restore the `pull_request` trigger in the same PR that publishes v0.1.0 under
+# crate names this project actually owns.
 on:
-  pull_request:
-    paths:
-      - "crates/**"
-      - "Cargo.toml"
+  workflow_dispatch:
+  # pull_request:
+  #   paths:
+  #     - "crates/**"
+  #     - "Cargo.toml"
 
 permissions:
   contents: read

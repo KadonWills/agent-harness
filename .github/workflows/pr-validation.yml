@@ -13,7 +13,12 @@ jobs:
     name: Conventional PR title
     runs-on: ubuntu-latest
     steps:
+      # Dependabot titles PRs "chore(deps): Bump x from a to b" — conventional,
+      # but the capital "B" trips subjectPattern below, which made every
+      # dependency PR permanently unmergeable. Skip the step, not the job: this
+      # is a required status check and must still report a conclusion.
       - uses: amannn/action-semantic-pull-request@v5
+        if: github.actor != 'dependabot[bot]'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
