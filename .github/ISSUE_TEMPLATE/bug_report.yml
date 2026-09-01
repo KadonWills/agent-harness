@@ -1,0 +1,37 @@
+name: Bug report
+description: Something is broken
+labels: [bug, needs-triage]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Harness version
+      description: Output of `harness --version`
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: OS / sandbox backend
+      placeholder: "macOS 15, docker"
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Smallest repo/config that shows the problem. Include harness.toml if relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / manifest
+      description: Relevant CLI output or AgentManifest.json (scrub anything sensitive).
+      render: text

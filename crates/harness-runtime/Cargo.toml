@@ -1,0 +1,15 @@
+[package]
+name = "harness-runtime"
+description = "Sandboxed execution driver for agent-generated code (Docker / Wasmtime backends)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+harness-core.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

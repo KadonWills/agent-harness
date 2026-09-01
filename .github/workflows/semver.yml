@@ -1,0 +1,33 @@
+name: Semver
+
+on:
+  pull_request:
+    paths:
+      - "crates/**"
+      - "Cargo.toml"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  semver-checks:
+    name: API breakage (cargo-semver-checks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skip if acknowledged breaking change
+        id: ack
+        env:
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ' ') }}
+        run: |
+          if echo "$LABELS" | grep -qw "breaking-change"; then
+            echo "acknowledged=true" >> "$GITHUB_OUTPUT"
+            echo "Breaking change acknowledged via label; skipping check."
+          else
+            echo "acknowledged=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: obi1kenobi/cargo-semver-checks-action@v2
+        if: steps.ack.outputs.acknowledged == 'false'
+        with:
+          package: harness-core, harness-ast, harness-runtime

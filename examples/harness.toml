@@ -1,0 +1,14 @@
+# AgentHarness configuration — canonical example.
+# This file is parsed by harness-core's test suite; keep it valid.
+
+[project]
+name = "core-api"
+
+[sandbox]
+provider = "docker"       # "docker" locally today; "wasmtime" planned (v0.3)
+allow_egress = false      # zero-trust default: no outbound network in the sandbox
+max_memory = "512MB"
+
+[agents]
+allowed = ["claude-code", "cline", "github-copilot"]
+strict_mode = true        # reject sessions from agents not listed above

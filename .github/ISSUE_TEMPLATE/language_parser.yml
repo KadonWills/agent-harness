@@ -1,0 +1,25 @@
+name: Language parser request
+description: Request or volunteer AST support for a language
+labels: [area/ast, parser-request]
+body:
+  - type: input
+    id: language
+    attributes:
+      label: Language
+    validations:
+      required: true
+  - type: input
+    id: grammar
+    attributes:
+      label: Tree-sitter grammar
+      placeholder: e.g. tree-sitter-go (link the crate/repo)
+    validations:
+      required: true
+  - type: dropdown
+    id: volunteering
+    attributes:
+      label: Are you volunteering to implement it?
+      description: See docs/guides/adding-a-language.md — the goal is < 100 lines.
+      options: ["Yes, I'll open a PR", "No, just requesting"]
+    validations:
+      required: true

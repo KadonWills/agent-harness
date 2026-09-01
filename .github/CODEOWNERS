@@ -1,0 +1,7 @@
+# Default: founding maintainer reviews everything until areas are delegated.
+* @KadonWills
+
+# Contract files require extra scrutiny — changes here are semver-governed.
+/crates/harness-core/src/config.rs   @KadonWills
+/crates/harness-core/src/manifest.rs @KadonWills
+/docs/rfcs/                          @KadonWills

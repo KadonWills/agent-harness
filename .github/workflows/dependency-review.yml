@@ -1,0 +1,26 @@
+name: Dependency review
+
+# P2 of the PRD applied to this repository itself: no PR adds a vulnerable
+# or non-allowlisted dependency. cargo-deny (security.yml) checks the whole
+# tree; this checks the delta and comments inline on the PR.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    name: New dependency review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+          comment-summary-in-pr: on-failure
+          # Mirror deny.toml's allowlist so the two gates cannot disagree.
+          allow-licenses: >-
+            MIT, Apache-2.0, Apache-2.0 WITH LLVM-exception, BSD-2-Clause,
+            BSD-3-Clause, ISC, Unicode-3.0, Zlib
