@@ -15,7 +15,7 @@ jobs:
     name: API breakage (cargo-semver-checks)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Skip if acknowledged breaking change
         id: ack
         env:
