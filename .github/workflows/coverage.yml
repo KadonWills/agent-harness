@@ -30,7 +30,7 @@ jobs:
       # https://app.codecov.io/gh/KadonWills/agent-harness/settings then run:
       #   gh secret set CODECOV_TOKEN --repo KadonWills/agent-harness
       - name: Upload to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v7
         with:
           files: lcov.info
           # Keep false only while the token is missing: flipping it to true
