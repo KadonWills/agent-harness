@@ -17,8 +17,12 @@ jobs:
       # but the capital "B" trips subjectPattern below, which made every
       # dependency PR permanently unmergeable. Skip the step, not the job: this
       # is a required status check and must still report a conclusion.
+      #
+      # Test the PR author, not github.actor: github.actor is whoever triggered
+      # the event, so a maintainer editing or syncing a Dependabot PR would
+      # otherwise reinstate the failure.
       - uses: amannn/action-semantic-pull-request@v5
-        if: github.actor != 'dependabot[bot]'
+        if: github.event.pull_request.user.login != 'dependabot[bot]'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
