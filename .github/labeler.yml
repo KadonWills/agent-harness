@@ -1,0 +1,23 @@
+"area/cli":
+  - changed-files:
+      - any-glob-to-any-file: crates/harness-cli/**
+"area/core":
+  - changed-files:
+      - any-glob-to-any-file: crates/harness-core/**
+"area/ast":
+  - changed-files:
+      - any-glob-to-any-file: crates/harness-ast/**
+"area/runtime":
+  - changed-files:
+      - any-glob-to-any-file: crates/harness-runtime/**
+"area/docs":
+  - changed-files:
+      - any-glob-to-any-file: ["docs/**", "**/*.md"]
+"area/ci":
+  - changed-files:
+      - any-glob-to-any-file: [".github/**", "scripts/**"]
+"contract-change":
+  - changed-files:
+      - any-glob-to-any-file:
+          - crates/harness-core/src/config.rs
+          - crates/harness-core/src/manifest.rs

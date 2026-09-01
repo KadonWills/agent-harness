@@ -1,0 +1,16 @@
+# Normalize to LF in the repo; CI runs `cargo fmt --check` on Windows too,
+# so a CRLF checkout would fail the format gate.
+* text=auto eol=lf
+
+# Never rewrite these.
+*.png binary
+*.jpg binary
+*.gz  binary
+*.zip binary
+
+# Lockfile is committed (this workspace ships a binary) but is noise in review.
+Cargo.lock linguist-generated=true -diff
+
+# Keep GitHub's language stats about the Rust, not the docs.
+docs/**      linguist-documentation
+examples/**  linguist-documentation

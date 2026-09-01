@@ -1,0 +1,12 @@
+/target
+Cargo.lock.orig
+*.log
+.DS_Store
+.idea/
+.vscode/
+*.profraw
+coverage/
+dist/
+node_modules/
+# Local harness state
+.harness/

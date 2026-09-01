@@ -1,0 +1,3 @@
+# Stable-channel options only — CI runs `cargo fmt --check` on stable.
+edition = "2021"
+max_width = 100

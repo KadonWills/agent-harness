@@ -1,0 +1,23 @@
+name: Feature request
+description: Propose an enhancement
+labels: [enhancement, needs-triage]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What can't you do today? Who else hits this?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+  - type: dropdown
+    id: contract
+    attributes:
+      label: Does this change a public contract?
+      description: harness.toml schema, AgentManifest.json, public traits, or CLI surface — if yes, this becomes an RFC.
+      options: ["No", "Yes", "Not sure"]
+    validations:
+      required: true

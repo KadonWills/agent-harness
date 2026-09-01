@@ -1,0 +1,92 @@
+name: PR validation
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  title:
+    name: Conventional PR title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            test
+            refactor
+            perf
+            chore
+            ci
+            build
+          scopes: |
+            cli
+            core
+            ast
+            runtime
+            docs
+            ci
+            deps
+          requireScope: false
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: >
+            The PR title subject must not start with an uppercase letter
+            (conventional commits style), e.g. "feat(ast): add go parser".
+
+  dco:
+    name: DCO sign-off
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check all commits are signed off
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          missing=0
+          for sha in $(git rev-list "$BASE_SHA".."$HEAD_SHA"); do
+            if ! git log -1 --format=%B "$sha" | grep -qi '^Signed-off-by: .\+<.\+@.\+>'; then
+              echo "::error::Commit $sha is missing a Signed-off-by line (use 'git commit -s')."
+              missing=1
+            fi
+          done
+          exit $missing
+
+  label-size:
+    name: Size label
+    runs-on: ubuntu-latest
+    steps:
+      - uses: codelytv/pr-size-labeler@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          xs_label: size/XS
+          xs_max_size: "20"
+          s_label: size/S
+          s_max_size: "100"
+          m_label: size/M
+          m_max_size: "300"
+          l_label: size/L
+          l_max_size: "600"
+          xl_label: size/XL
+          fail_if_xl: "false"
+          message_if_xl: >
+            This PR changes more than 600 lines. Please consider splitting it
+            into focused PRs — large PRs take much longer to review.
+
+  label-area:
+    name: Area labels
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/labeler@v5
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
