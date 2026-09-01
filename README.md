@@ -1,5 +1,10 @@
 # AgentHarness
 
+[![CI](https://github.com/KadonWills/agent-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/KadonWills/agent-harness/actions/workflows/ci.yml)
+[![Security](https://github.com/KadonWills/agent-harness/actions/workflows/security.yml/badge.svg)](https://github.com/KadonWills/agent-harness/actions/workflows/security.yml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/KadonWills/agent-harness/badge)](https://scorecard.dev/viewer/?uri=github.com/KadonWills/agent-harness)
+[![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
+
 **Guardrails for autonomous coding agents.** AgentHarness sits between AI
 coding agents (Claude Code, Cline, Cursor, Copilot Workspace, …) and your
 git repository: it sandboxes and executes agent-generated changes, diffs
@@ -36,10 +41,21 @@ agent edits ──► harness run ──► sandbox (no network) ──► AST d
 
 ```bash
 cargo install harness-cli    # npm i -g @agentharness/cli also planned
+                             # ^ NOT YET PUBLISHED — see the note below
 harness init                 # writes harness.toml, offers git hooks
 harness check                # validates config + sandbox availability
 harness run                  # snapshot → sandbox → gate → AgentManifest.json
 ```
+
+> **Do not run that install yet.** Nothing is published: `harness-cli` on
+> crates.io is an unrelated benchmarking tool, and the final crate names are
+> still undecided — see [ADR-0005](docs/adr/0005-crate-naming.md). To try the
+> current scaffold, build from source:
+>
+> ```bash
+> git clone https://github.com/KadonWills/agent-harness && cd agent-harness
+> cargo build --workspace && ./scripts/check.sh
+> ```
 
 Configuration lives in [`harness.toml`](examples/harness.toml):
 
