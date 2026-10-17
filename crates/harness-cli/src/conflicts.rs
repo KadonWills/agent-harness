@@ -23,7 +23,7 @@ pub struct Args {
     /// Print a machine-readable report on stdout.
     #[arg(long)]
     pub json: bool,
-    /// Branches to compare (default: those matching [conflicts].branches).
+    /// Branches to compare (default: those matching `[conflicts].branches`).
     /// The checked-out branch is read from the working tree.
     pub branches: Vec<String>,
 }
