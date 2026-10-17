@@ -7,9 +7,20 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[features]
+default = []
+lang-typescript = ["dep:tree-sitter-typescript"]
+lang-javascript = ["dep:tree-sitter-javascript"]
+lang-python = ["dep:tree-sitter-python"]
+full = ["lang-typescript", "lang-javascript", "lang-python"]
+
 [dependencies]
 harness-core.workspace = true
 thiserror.workspace = true
+tree-sitter.workspace = true
+tree-sitter-typescript = { workspace = true, optional = true }
+tree-sitter-javascript = { workspace = true, optional = true }
+tree-sitter-python = { workspace = true, optional = true }
 
 [lints]
 workspace = true

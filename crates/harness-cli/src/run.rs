@@ -1,8 +1,10 @@
 //! `harness run` — the gate. Snapshot → sandbox → findings → manifest.
 
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
+use harness_ast::AstChange;
 use harness_core::config::HarnessConfig;
 use harness_core::manifest::{AgentManifest, ImpactedFile, SandboxStatus, Verdict};
 use harness_runtime::{ExecutionPlan, SandboxBackend, SessionReport, Snapshot};
@@ -102,12 +104,22 @@ fn open(dir: &Path, args: &Args) -> Result<Session> {
     let changes = git.changed_files(base.as_deref(), None)?;
     manifest.base_ref = base_ref;
     manifest.head = git.head().unwrap_or_default();
-    let notes = vec![summarize(&changes)];
+    let mut notes = vec![summarize(&changes)];
+    let ast = structural_diff(&git, base.as_deref(), &changes, &mut notes)?;
     manifest.impacted_files = changes
         .iter()
         .map(|c| ImpactedFile {
             path: c.path.clone(),
-            ast_changes: Vec::new(),
+            ast_changes: ast
+                .get(&c.path)
+                .map(|changes| {
+                    changes
+                        .iter()
+                        .filter(|a| a.is_reportable())
+                        .map(ToString::to_string)
+                        .collect()
+                })
+                .unwrap_or_default(),
         })
         .collect();
 
@@ -117,6 +129,38 @@ fn open(dir: &Path, args: &Args) -> Result<Session> {
         manifest,
         notes,
     })
+}
+
+/// Structural changes per file, for every file a parser claims.
+pub fn structural_diff(
+    git: &Git,
+    base: Option<&str>,
+    changes: &[FileChange],
+    notes: &mut Vec<String>,
+) -> Result<BTreeMap<String, Vec<AstChange>>> {
+    let mut out = BTreeMap::new();
+    for change in changes {
+        let Some(parser) = harness_ast::parser_for_path(&change.path) else {
+            continue;
+        };
+        let before = match (base, change.kind) {
+            (Some(base), ChangeKind::Modified | ChangeKind::Deleted) => {
+                git.show(base, &change.path)?.unwrap_or_default()
+            }
+            _ => String::new(),
+        };
+        let after = match change.kind {
+            ChangeKind::Deleted => String::new(),
+            _ => git.read_worktree(&change.path).unwrap_or_default(),
+        };
+        match parser.diff(&before, &after) {
+            Ok(ast) => {
+                out.insert(change.path.clone(), ast);
+            }
+            Err(e) => notes.push(format!("{}: structural diff skipped ({e})", change.path)),
+        }
+    }
+    Ok(out)
 }
 
 fn summarize(changes: &[FileChange]) -> String {
@@ -407,6 +451,10 @@ mod tests {
         assert_eq!(m.steps[0].phase, Phase::Setup);
         let paths: Vec<_> = m.impacted_files.iter().map(|f| f.path.as_str()).collect();
         assert_eq!(paths, ["src/a.py", "src/new.py"]);
+        assert!(
+            m.impacted_files[0].ast_changes.is_empty(),
+            "x = 2 declares nothing"
+        );
         assert_eq!(m.base_ref, "main");
         assert_eq!(m.head.len(), 40);
     }
@@ -496,6 +544,40 @@ mod tests {
         };
         let err = run_with(dir.path(), &args, &FakeBackend::new(&[])).expect_err("unknown base");
         assert!(format!("{err:#}").contains("--base"));
+    }
+
+    #[test]
+    fn structural_changes_are_recorded() {
+        let dir = repo(&[
+            ("harness.toml", ""),
+            (
+                "svc.ts",
+                "export function getUser(id: string) { return id; }\n",
+            ),
+            ("old.py", "def gone():\n    pass\n"),
+        ]);
+        write(
+            dir.path(),
+            &[(
+                "svc.ts",
+                "export function getUser(id: string, deep: boolean) { return id; }\n",
+            )],
+        );
+        std::fs::remove_file(dir.path().join("old.py")).expect("rm");
+        run_with(dir.path(), &Args::default(), &FakeBackend::new(&[])).expect("run");
+        let m = manifest_of(dir.path());
+        let by_path = |p: &str| {
+            m.impacted_files
+                .iter()
+                .find(|f| f.path == p)
+                .map(|f| f.ast_changes.clone())
+                .expect("impacted")
+        };
+        assert_eq!(
+            by_path("svc.ts"),
+            ["FunctionChanged:getUser", "SignatureChanged:getUser"]
+        );
+        assert_eq!(by_path("old.py"), ["FunctionRemoved:gone"]);
     }
 
     #[test]

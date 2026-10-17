@@ -70,6 +70,17 @@ allowed = ["claude-code", "cline", "github-copilot"]
 strict_mode = true
 ```
 
+## Supported languages (structural diff)
+
+| Language | Extensions | Feature |
+|---|---|---|
+| TypeScript / TSX | `.ts` `.mts` `.cts` `.tsx` | `lang-typescript` |
+| JavaScript / JSX | `.js` `.jsx` `.mjs` `.cjs` | `lang-javascript` |
+| Python | `.py` `.pyi` | `lang-python` |
+
+Adding one is a mapping table of under 100 lines — see
+[the guide](docs/guides/adding-a-language.md).
+
 ## Repository layout
 
 ```

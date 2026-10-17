@@ -10,7 +10,7 @@ members = [
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.90"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/KadonWills/agent-harness"
 homepage = "https://github.com/KadonWills/agent-harness"
@@ -32,6 +32,10 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 regex = "1"
 tempfile = "3"
 sha2 = "0.10"
+tree-sitter = "0.27"
+tree-sitter-typescript = "0.23"
+tree-sitter-javascript = "0.25"
+tree-sitter-python = "0.25"
 
 [profile.release]
 lto = "thin"
