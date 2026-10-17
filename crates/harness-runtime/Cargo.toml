@@ -7,11 +7,18 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[features]
+default = []
+# WASI sandbox backend. Follows Wasmtime's MSRV, not the workspace's.
+wasmtime = ["dep:wasmtime", "dep:wasmtime-wasi"]
+
 [dependencies]
 harness-core.workspace = true
 thiserror.workspace = true
 regex.workspace = true
 tempfile.workspace = true
+wasmtime = { workspace = true, optional = true }
+wasmtime-wasi = { workspace = true, optional = true }
 
 [lints]
 workspace = true
