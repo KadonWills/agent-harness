@@ -1,44 +1,84 @@
 //! `harness` — the AgentHarness CLI.
 //!
-//! Command surface (v0.1): `init`, `check`, `run`.
-//! See docs/PRD.md §4 for the full specification.
+//! Command surface and exit codes are specified in
+//! docs/rfcs/0001-v0.1-v0.4-contracts.md §5: 0 = pass, 1 = the gate
+//! blocked, 2 = harness could not run.
+
+use std::path::PathBuf;
+use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
+
+mod check;
+mod detect;
+mod git;
+mod init;
+mod intent;
+mod run;
+mod settings;
 
 #[derive(Parser)]
 #[command(
     name = "harness",
     version,
-    about = "Guardrails for autonomous coding agents"
+    about = "Guardrails for autonomous coding agents",
+    after_help = "Exit codes: 0 = pass, 1 = the gate blocked, 2 = harness could not run."
 )]
 struct Cli {
+    /// Run as if started in this directory.
+    #[arg(short = 'C', long, global = true, value_name = "DIR")]
+    directory: Option<PathBuf>,
     #[command(subcommand)]
     command: Command,
 }
 
 #[derive(Subcommand)]
 enum Command {
-    /// Create a harness.toml in the current repository.
-    Init,
+    /// Create a harness.toml for the detected project type.
+    Init(init::Args),
     /// Validate harness.toml and report environment readiness.
-    Check,
+    Check(check::Args),
     /// Run the validation pipeline against pending agent changes.
-    Run,
+    Run(run::Args),
 }
 
-fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::init();
+/// What a command decided, mapped to exit codes 0 and 1.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Outcome {
+    Pass,
+    Blocked,
+}
+
+fn main() -> ExitCode {
+    tracing_subscriber::fmt()
+        .with_writer(std::io::stderr)
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_env("HARNESS_LOG")
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("warn")),
+        )
+        .init();
     let cli = Cli::parse();
-    match cli.command {
-        Command::Init => {
-            println!("harness init: not yet implemented (v0.1 milestone — see docs/ROADMAP.md)");
-        }
-        Command::Check => {
-            println!("harness check: not yet implemented (v0.1 milestone — see docs/ROADMAP.md)");
-        }
-        Command::Run => {
-            println!("harness run: not yet implemented (v0.1 milestone — see docs/ROADMAP.md)");
+    let dir = match cli.directory {
+        Some(dir) => dir,
+        None => match std::env::current_dir() {
+            Ok(dir) => dir,
+            Err(e) => {
+                eprintln!("error: cannot read the current directory: {e}");
+                return ExitCode::from(2);
+            }
+        },
+    };
+    let result = match cli.command {
+        Command::Init(args) => init::run(&dir, &args),
+        Command::Check(args) => check::run(&dir, &args),
+        Command::Run(args) => run::run(&dir, &args),
+    };
+    match result {
+        Ok(Outcome::Pass) => ExitCode::SUCCESS,
+        Ok(Outcome::Blocked) => ExitCode::from(1),
+        Err(e) => {
+            eprintln!("error: {e:#}");
+            ExitCode::from(2)
         }
     }
-    Ok(())
 }
