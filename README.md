@@ -12,9 +12,10 @@ them structurally at the AST level, detects semantic conflicts between
 concurrent agents, and blocks secrets and unvetted dependencies — all
 **before** the code reaches human review.
 
-> Status: **pre-alpha scaffold.** The architecture, contracts, and
-> contribution paths are defined; v0.1 ("The Gate") is under active
-> construction. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> Status: **pre-alpha.** Milestones v0.1–v0.4 (gate, structural diff,
+> multi-agent conflicts, security) are implemented per
+> [RFC-0001](docs/rfcs/0001-v0.1-v0.4-contracts.md). Nothing is published
+> yet. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Why
 
@@ -37,37 +38,52 @@ agent edits ──► harness run ──► sandbox (no network) ──► AST d
 - **Multi-agent aware** — catches jointly-broken changes plain merge can't see.
 - **Agent-legible** — config, errors, and reports designed for LLMs to self-correct against.
 
-## Quick start (target UX — v0.1)
+## Quick start
+
+Nothing is published yet. `harness-cli` on crates.io is an unrelated tool,
+and crate names are still undecided (see [ADR-0005](docs/adr/0005-crate-naming.md)).
+Build from source:
 
 ```bash
-cargo install harness-cli    # npm i -g @agentharness/cli also planned
-                             # ^ NOT YET PUBLISHED — see the note below
-harness init                 # writes harness.toml, offers git hooks
-harness check                # validates config + sandbox availability
-harness run                  # snapshot → sandbox → gate → AgentManifest.json
+cargo install --locked --git https://github.com/KadonWills/agent-harness harness-cli
+# add `--features wasmtime` for the WASI sandbox backend
+
+cd your-repo
+harness init --hooks   # writes harness.toml; pre-commit = scan, pre-push = run
+harness check          # validates config + sandbox availability
+harness run            # snapshot → sandbox → AST diff → conflicts → security → AgentManifest.json
 ```
 
-> **Do not run that install yet.** Nothing is published: `harness-cli` on
-> crates.io is an unrelated benchmarking tool, and the final crate names are
-> still undecided — see [ADR-0005](docs/adr/0005-crate-naming.md). To try the
-> current scaffold, build from source:
->
-> ```bash
-> git clone https://github.com/KadonWills/agent-harness && cd agent-harness
-> cargo build --workspace && ./scripts/check.sh
-> ```
+| Command | What it does |
+|---|---|
+| `harness init [--force] [--hooks]` | Detects Node/Python/Rust/Go and writes `harness.toml` with your install and test commands |
+| `harness check [--json]` | Reports config problems, a missing base ref, or an unavailable sandbox, each with a fix |
+| `harness run [--agent] [--intent\|--intent-file] [--base] [--manifest] [--json]` | The full gate; writes `.harness/AgentManifest.json` |
+| `harness scan [--staged\|--base] [--json]` | Secrets and new-dependency policy only (the pre-commit hook) |
+| `harness conflicts [--base] [--fix] [--json] [BRANCH...]` | Semantic conflicts between agent branches; `--fix` applies Level 1 codemods |
+
+Exit codes: **0** pass, **1** the gate blocked, **2** harness could not run.
+In CI, use the [GitHub Action](docs/guides/github-action.md).
 
 Configuration lives in [`harness.toml`](examples/harness.toml):
 
 ```toml
 [sandbox]
 provider = "docker"
-allow_egress = false
-max_memory = "512MB"
+image = "node:22-bookworm-slim"
+allow_egress = false        # validation commands get no network
+allow_setup_egress = true   # dependency install may
+
+[validation]
+setup = ["npm ci"]
+commands = ["npm test"]
 
 [agents]
 allowed = ["claude-code", "cline", "github-copilot"]
 strict_mode = true
+
+[conflicts]
+branches = ["agent/*"]
 ```
 
 ## Supported languages (structural diff)
@@ -88,6 +104,7 @@ crates/harness-cli       the `harness` binary
 crates/harness-core      config + AgentManifest contracts (dependency-light)
 crates/harness-ast       Tree-sitter structural diff engine
 crates/harness-runtime   sandbox backends (Docker, Wasmtime)
+crates/harness-security  secret scanning + dependency policy
 docs/                    PRD, architecture, ADRs, RFCs, guides
 .github/                 the automated contribution gate
 ```

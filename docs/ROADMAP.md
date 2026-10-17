@@ -9,45 +9,49 @@ absent — sequence and exit criteria are the commitment.
 The smallest thing that is honestly useful: *never let an unexecuted agent
 change reach review.*
 
-- [ ] `harness init` / `check` / `run` (crate: `harness-cli`)
-- [ ] `harness.toml` parsing with safe defaults (`harness-core`) — done in scaffold
-- [ ] Docker sandbox backend: tree snapshot, egress denied, memory/time limits
-- [ ] Run the project's own test command inside the sandbox
-- [ ] Emit `AgentManifest.json`
-- [ ] Git pre-push hook installer + reference GitHub Action
+- [x] `harness init` / `check` / `run` (crate: `harness-cli`)
+- [x] `harness.toml` parsing with safe defaults (`harness-core`)
+- [x] Docker sandbox backend: tree snapshot, egress denied, memory/time limits
+- [x] Run the project's own test command inside the sandbox
+- [x] Emit `AgentManifest.json`
+- [x] Git pre-push hook installer + reference GitHub Action
 
 **Exit criteria:** on a fresh TypeScript or Python repo, `harness init &&
 harness run` completes in under 5 minutes total and blocks a deliberately
-broken change.
+broken change. *Met:* a fresh Python repo passes in about 57s and a broken
+`add()` is blocked; the action smoke workflow repeats this in CI.
 
 ## v0.2 — "The Eyes" (structural awareness)
 
-- [ ] `harness-ast` Tree-sitter integration, `LanguageParser` trait stabilized
-- [ ] TypeScript/JavaScript + Python parsers
-- [ ] `ast_changes` populated in the manifest
+- [x] `harness-ast` Tree-sitter integration (trait stabilizes at v1.0)
+- [x] TypeScript/JavaScript + Python parsers
+- [x] `ast_changes` populated in the manifest
 - [ ] `docs/guides/adding-a-language.md` proven by an external contribution
 
 **Exit criteria:** a community-contributed language parser merges at < 100
-lines of glue code.
+lines of glue code. *Pending:* the in-tree specs are 29–70 lines; the
+external contribution has not happened yet.
 
 ## v0.3 — "The Referee" (multi-agent)
 
-- [ ] Cross-branch/worktree `AstChange` comparison
-- [ ] Semantic conflict detection + Level 2 halt-and-explain
-- [ ] Level 1 deterministic codemod auto-fixes (narrow, provably safe set)
-- [ ] Wasmtime sandbox backend (no-Docker environments, Windows story)
+- [x] Cross-branch `AstChange` comparison (worktrees: OQ-1, still open)
+- [x] Semantic conflict detection + Level 2 halt-and-explain
+- [x] Level 1 deterministic codemod auto-fixes (narrow, provably safe set)
+- [x] Wasmtime sandbox backend (no-Docker environments, Windows story)
 
 **Exit criteria:** the GraphQL-schema-drift scenario from the PRD is caught
-on a demo repo with two concurrent agent branches.
+on a demo repo with two concurrent agent branches. *Met:* see
+`schema_drift_between_agent_branches_blocks` in `harness-cli`.
 
 ## v0.4 — "The Shield" (zero-trust security)
 
-- [ ] Secret scanning on staged changes (gitleaks-compatible rules)
-- [ ] Egress attempt audit trail in the manifest
-- [ ] Dependency policy: allow/deny lists + advisory DB check on new deps
+- [x] Secret scanning on staged changes (gitleaks-compatible rules)
+- [x] Egress attempt audit trail in the manifest
+- [x] Dependency policy: allow/deny lists + advisory DB check on new deps
 
 **Exit criteria:** a planted credential and a typosquatted dependency are
-both blocked before commit on the demo repo.
+both blocked before commit on the demo repo. *Met:* the `pre-commit` hook
+from `harness init --hooks` blocks both.
 
 ## v0.5 — "The Judge" (behavioral)
 
