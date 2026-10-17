@@ -51,8 +51,8 @@ Green gate + one maintainer approval = merge.
 
    Use `git commit -s` to add the sign-off. Allowed types: `feat`, `fix`,
    `docs`, `test`, `refactor`, `perf`, `chore`, `ci`, `build`. Scope is
-   the crate short name (`cli`, `core`, `ast`, `runtime`) or area (`docs`,
-   `ci`).
+   the crate short name (`cli`, `core`, `ast`, `runtime`, `security`) or area
+   (`docs`, `ci`).
 6. **Open the PR.** The template asks what/why/how-tested; fill it in.
    PR titles must themselves be valid conventional commit headers — they
    become the squash-merge commit.

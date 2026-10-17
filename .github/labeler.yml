@@ -10,6 +10,9 @@
 "area/runtime":
   - changed-files:
       - any-glob-to-any-file: crates/harness-runtime/**
+"area/security":
+  - changed-files:
+      - any-glob-to-any-file: crates/harness-security/**
 "area/docs":
   - changed-files:
       - any-glob-to-any-file: ["docs/**", "**/*.md"]
