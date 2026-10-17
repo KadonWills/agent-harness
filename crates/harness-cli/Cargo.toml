@@ -11,6 +11,11 @@ repository.workspace = true
 name = "harness"
 path = "src/main.rs"
 
+[features]
+default = []
+# The WASI sandbox backend (sandbox.provider = "wasmtime").
+wasmtime = ["harness-runtime/wasmtime"]
+
 [dependencies]
 harness-core.workspace = true
 harness-ast = { workspace = true, features = ["full"] }
