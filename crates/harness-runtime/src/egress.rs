@@ -12,6 +12,8 @@ use std::sync::OnceLock;
 use harness_core::manifest::EgressEvent;
 use regex::Regex;
 
+const UNKNOWN: &str = "unknown";
+
 /// Signatures whose first capture group, when present, is the destination.
 const SIGNATURES: &[&str] = &[
     // Node.js
@@ -44,8 +46,9 @@ fn signatures() -> &'static [Regex] {
     })
 }
 
-/// Scan one step's combined output. Each matching line yields one event;
-/// a line matching several signatures yields the most specific one.
+/// Scan one step's combined output. Each matching line yields one event
+/// (a line matching several signatures yields the first in the table);
+/// lines naming no destination collapse into at most one event.
 pub fn detect(step: &str, output: &str) -> Vec<EgressEvent> {
     let mut events = BTreeSet::new();
     for line in output.lines() {
@@ -53,7 +56,7 @@ pub fn detect(step: &str, output: &str) -> Vec<EgressEvent> {
         let hit = signatures().iter().find_map(|re| {
             re.captures(line).map(|caps| {
                 caps.get(1)
-                    .map_or("unknown", |m| m.as_str().trim_end_matches('.'))
+                    .map_or(UNKNOWN, |m| m.as_str().trim_end_matches('.'))
                     .to_string()
             })
         });
@@ -65,7 +68,22 @@ pub fn detect(step: &str, output: &str) -> Vec<EgressEvent> {
             });
         }
     }
-    events.into_iter().collect()
+    // A runtime often echoes one failure several times (message, then the
+    // traceback's root cause). Lines that name no destination add no
+    // information once a named one exists, so keep at most one of them.
+    let named = events.iter().any(|e| e.destination != UNKNOWN);
+    let mut kept_unknown = false;
+    events
+        .into_iter()
+        .filter(|e| {
+            if e.destination != UNKNOWN {
+                return true;
+            }
+            let keep = !named && !kept_unknown;
+            kept_unknown = true;
+            keep
+        })
+        .collect()
 }
 
 fn truncate(s: &str, max: usize) -> String {
@@ -122,6 +140,15 @@ mod tests {
         let events = detect("npm test", twice);
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].step, "npm test");
+    }
+
+    #[test]
+    fn unnamed_failures_collapse() {
+        let python = "E   urllib.error.URLError: <urlopen error [Errno -3] Temporary failure in name resolution>\n\
+                      E   socket.gaierror: [Errno -3] Temporary failure in name resolution\n";
+        assert_eq!(destinations(python), ["unknown"]);
+        let mixed = "Temporary failure in name resolution\nCould not resolve host: a.com\n";
+        assert_eq!(destinations(mixed), ["a.com"]);
     }
 
     #[test]
