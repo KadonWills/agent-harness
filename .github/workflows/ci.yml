@@ -58,16 +58,18 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo doc --workspace --no-deps
 
+  # MSRV covers default features; the opt-in `wasmtime` feature follows
+  # Wasmtime's own MSRV (RFC-0001 §8).
   msrv:
-    name: MSRV (1.75)
+    name: MSRV (1.90)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: "1.75"
+          toolchain: "1.90"
       - uses: Swatinem/rust-cache@v2
-      - run: cargo check --workspace --all-features
+      - run: cargo check --workspace
 
   # Single required status check to point branch protection at.
   gate:

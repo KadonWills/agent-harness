@@ -189,6 +189,22 @@ impl Git {
         Ok(files)
     }
 
+    /// File contents at `rev`, or `None` if the file does not exist there.
+    pub fn show(&self, rev: &str, path: &str) -> Result<Option<String>> {
+        let spec = format!("{rev}:{path}");
+        let out = self.raw(&["show", &spec])?;
+        Ok(out
+            .status
+            .success()
+            .then(|| String::from_utf8_lossy(&out.stdout).into_owned()))
+    }
+
+    /// File contents in the working tree, or `None` if absent or binary.
+    pub fn read_worktree(&self, path: &str) -> Option<String> {
+        let bytes = std::fs::read(self.root.join(path)).ok()?;
+        String::from_utf8(bytes).ok()
+    }
+
     /// Path of the hooks directory (honours `core.hooksPath`).
     pub fn hooks_dir(&self) -> Result<PathBuf> {
         let out = self.run(&["rev-parse", "--git-path", "hooks"])?;
@@ -270,6 +286,12 @@ mod tests {
         let head = g.head().expect("head");
         let base = g.merge_base("main", "HEAD").expect("merge base");
         assert_eq!(base.as_deref(), Some(head.as_str()));
+        assert_eq!(
+            g.show(&head, "a.txt").expect("show").as_deref(),
+            Some("1\n")
+        );
+        assert_eq!(g.show(&head, "missing").expect("show"), None);
+        assert_eq!(g.read_worktree("a.txt").as_deref(), Some("changed\n"));
 
         let changes = g.changed_files(base.as_deref(), None).expect("changes");
         let summary: Vec<_> = changes.iter().map(|c| (c.path.as_str(), c.kind)).collect();
