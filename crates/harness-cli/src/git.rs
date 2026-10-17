@@ -6,6 +6,9 @@ use std::process::Command;
 
 use anyhow::{bail, Context, Result};
 
+/// The id of git's empty tree, for diffing before the first commit.
+const EMPTY_TREE: &str = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
+
 #[derive(Debug, Clone)]
 pub struct Git {
     root: PathBuf,
@@ -213,6 +216,69 @@ impl Git {
         String::from_utf8(bytes).ok()
     }
 
+    /// `git diff -U0` between `base` and the working tree (or the index
+    /// when `staged`). Untracked files are appended as all-added hunks.
+    /// With no base (no commits yet) every file is an addition.
+    pub fn unified_diff(&self, base: Option<&str>, staged: bool) -> Result<String> {
+        let mut args = vec!["diff", "-U0", "--no-color", "--no-ext-diff", "--no-renames"];
+        if staged {
+            args.push("--cached");
+        }
+        let mut diff = match base {
+            Some(base) => {
+                args.push(base);
+                self.run(&args)?
+            }
+            None if staged => {
+                if self.head().is_none() {
+                    args.push(EMPTY_TREE);
+                }
+                self.run(&args)?
+            }
+            None => {
+                let mut all = String::new();
+                for path in self.split_z(&self.run(&["ls-files", "-z"])?) {
+                    if let Some(text) = self.read_worktree(&path) {
+                        all.push_str(&added_file_diff(&path, &text));
+                    }
+                }
+                all
+            }
+        };
+        if !staged {
+            for path in self.untracked()? {
+                if let Some(text) = self.read_worktree(&path) {
+                    diff.push_str(&added_file_diff(&path, &text));
+                }
+            }
+        }
+        Ok(diff)
+    }
+
+    /// Paths staged in the index, with their change kinds.
+    pub fn staged_files(&self) -> Result<Vec<FileChange>> {
+        let mut args = vec!["diff", "--cached", "--name-status", "--no-renames", "-z"];
+        if self.head().is_none() {
+            // No commits yet: compare against the empty tree.
+            args.push(EMPTY_TREE);
+        }
+        let out = self.run(&args)?;
+        let mut changes = Vec::new();
+        let mut fields = out.split('\0').filter(|s| !s.is_empty());
+        while let (Some(status), Some(path)) = (fields.next(), fields.next()) {
+            let kind = match status.chars().next() {
+                Some('A') => ChangeKind::Added,
+                Some('D') => ChangeKind::Deleted,
+                _ => ChangeKind::Modified,
+            };
+            changes.push(FileChange {
+                path: path.to_string(),
+                kind,
+            });
+        }
+        Ok(changes)
+    }
+
     /// Path of the hooks directory (honours `core.hooksPath`).
     pub fn hooks_dir(&self) -> Result<PathBuf> {
         let out = self.run(&["rev-parse", "--git-path", "hooks"])?;
@@ -223,6 +289,21 @@ impl Git {
             self.root.join(path)
         })
     }
+}
+
+/// Render a whole file as a unified-diff addition.
+fn added_file_diff(path: &str, text: &str) -> String {
+    let count = text.lines().count();
+    let mut out = format!("diff --git a/{path} b/{path}\n--- /dev/null\n+++ b/{path}\n");
+    if count > 0 {
+        out.push_str(&format!("@@ -0,0 +1,{count} @@\n"));
+        for line in text.lines() {
+            out.push('+');
+            out.push_str(line);
+            out.push('\n');
+        }
+    }
+    out
 }
 
 #[cfg(test)]
@@ -335,6 +416,12 @@ mod tests {
         assert_eq!(g.merge_base("main", "HEAD").expect("ok"), None);
         let changes = g.changed_files(None, None).expect("changes");
         assert_eq!(changes[0].kind, ChangeKind::Added);
+        let diff = g.unified_diff(None, false).expect("diff");
+        assert!(diff.contains("+print(1)"), "{diff}");
+        git(dir.path(), &["add", "x.py"]);
+        let staged = g.unified_diff(None, true).expect("staged diff");
+        assert!(staged.contains("+print(1)"), "{staged}");
+        assert_eq!(g.staged_files().expect("staged")[0].path, "x.py");
     }
 
     #[test]

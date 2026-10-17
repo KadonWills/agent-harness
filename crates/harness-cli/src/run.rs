@@ -12,7 +12,7 @@ use harness_runtime::{ExecutionPlan, SandboxBackend, SessionReport, Snapshot};
 
 use crate::git::{ChangeKind, FileChange, Git};
 use crate::init::STATE_DIR;
-use crate::{conflicts, intent, settings, Outcome};
+use crate::{conflicts, intent, scan, settings, Outcome};
 
 #[derive(clap::Args, Default)]
 pub struct Args {
@@ -43,6 +43,8 @@ pub struct Session {
     pub manifest: AgentManifest,
     /// The working tree's structural changes, for conflict detection.
     pub working_set: ChangeSet,
+    /// Merge base with the base ref; `None` in a repository with no commits.
+    pub base: Option<String>,
     /// Non-blocking notes shown in the human report.
     pub notes: Vec<String>,
 }
@@ -61,6 +63,7 @@ pub fn run_with(dir: &Path, args: &Args, backend: &dyn SandboxBackend) -> Result
     let mut session = open(dir, args)?;
     agent_policy(&mut session);
     conflict_stage(&mut session)?;
+    security_stage(&mut session)?;
     let report = sandbox_stage(&mut session, backend)?;
 
     let Session {
@@ -142,6 +145,7 @@ fn open(dir: &Path, args: &Args) -> Result<Session> {
         config,
         manifest,
         working_set,
+        base,
         notes,
     })
 }
@@ -207,6 +211,21 @@ fn agent_policy(session: &mut Session) {
     } else {
         session.notes.push(msg);
     }
+}
+
+/// Secrets in added lines and policy for new dependencies.
+fn security_stage(session: &mut Session) -> Result<()> {
+    let target = scan::Target::WorkingTree {
+        base: session.base.as_deref(),
+    };
+    let findings = scan::inspect(&session.git, &session.config, &target)?;
+    for reason in findings.blocking_reasons() {
+        session.manifest.block(reason);
+    }
+    let audit = &mut session.manifest.security_audit;
+    audit.secret_findings = findings.secrets;
+    audit.dependency_findings = findings.dependencies;
+    Ok(())
 }
 
 /// Compare the working tree with every sibling branch named by
@@ -679,6 +698,29 @@ mod tests {
         assert_eq!(m.conflicts[0].kind, "removed-symbol");
         assert_eq!(m.conflicts[0].branches, ["agent/other", "main"]);
         assert!(m.blocking_reasons[0].contains("agent/other"));
+    }
+
+    #[test]
+    fn secrets_and_risky_dependencies_block_the_run() {
+        let dir = repo(&[("harness.toml", ""), ("requirements.txt", "requests\n")]);
+        let key = ["ghp_", "8vKq2LmN4pR6sT0uW3xY5zA7bC9dE1fG2hJ4"].concat();
+        write(
+            dir.path(),
+            &[
+                ("deploy.sh", &format!("TOKEN={key}\n")),
+                ("requirements.txt", "requests\nreqeusts\n"),
+            ],
+        );
+        let outcome = run_with(dir.path(), &Args::default(), &FakeBackend::new(&[])).expect("run");
+        assert_eq!(outcome, Outcome::Blocked);
+        let m = manifest_of(dir.path());
+        assert_eq!(m.security_audit.secrets_blocked, 1);
+        assert_eq!(m.security_audit.secret_findings[0].rule_id, "github-pat");
+        assert_eq!(m.security_audit.dependency_findings[0].name, "reqeusts");
+        assert_eq!(m.blocking_reasons.len(), 2);
+        let json = std::fs::read_to_string(dir.path().join(".harness/AgentManifest.json"))
+            .expect("manifest");
+        assert!(!json.contains(&key), "the secret itself is never written");
     }
 
     #[test]
