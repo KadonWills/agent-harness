@@ -52,7 +52,7 @@ git commit -s -m "feat(ast): add go parser"
 - Conventional Commits, enforced on both commits and the **PR title** (the PR
   title becomes the squash commit).
   Types: `feat` `fix` `docs` `test` `refactor` `perf` `chore` `ci` `build`.
-  Scopes: `cli` `core` `ast` `runtime` `docs` `ci` `deps`.
+  Scopes: `cli` `core` `ast` `runtime` `security` `docs` `ci` `deps`.
 - Subject must not start with a capital letter.
 - **DCO sign-off is required on every commit** (`-s`). CI rejects the PR
   otherwise, and unsigned history cannot be fixed by a maintainer for you.
@@ -70,7 +70,8 @@ git commit -s -m "feat(ast): add go parser"
 | `crates/harness-cli` | the `harness` binary — `init`, `check`, `run` |
 | `crates/harness-core` | config + `AgentManifest` contracts; keep dependency-light |
 | `crates/harness-ast` | Tree-sitter structural diff engine |
-| `crates/harness-runtime` | sandbox backends (Docker now, Wasmtime v0.3) |
+| `crates/harness-runtime` | sandbox backends (Docker; Wasmtime behind the `wasmtime` feature) |
+| `crates/harness-security` | secret scanning and dependency policy |
 | `docs/` | PRD, architecture, ADRs, RFCs, guides |
 | `examples/harness.toml` | parsed by `harness-core`'s tests — keep it valid |
 

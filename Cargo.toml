@@ -5,6 +5,7 @@ members = [
     "crates/harness-core",
     "crates/harness-ast",
     "crates/harness-runtime",
+    "crates/harness-security",
 ]
 
 [workspace.package]
@@ -20,6 +21,7 @@ authors = ["AgentHarness Contributors"]
 harness-core = { path = "crates/harness-core", version = "0.1.0" }
 harness-ast = { path = "crates/harness-ast", version = "0.1.0" }
 harness-runtime = { path = "crates/harness-runtime", version = "0.1.0" }
+harness-security = { path = "crates/harness-security", version = "0.1.0" }
 
 anyhow = "1"
 thiserror = "1"
