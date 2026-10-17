@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
+use harness_ast::conflict::{ChangeSet, FileChanges};
 use harness_ast::AstChange;
 use harness_core::config::HarnessConfig;
 use harness_core::manifest::{AgentManifest, ImpactedFile, SandboxStatus, Verdict};
@@ -11,7 +12,7 @@ use harness_runtime::{ExecutionPlan, SandboxBackend, SessionReport, Snapshot};
 
 use crate::git::{ChangeKind, FileChange, Git};
 use crate::init::STATE_DIR;
-use crate::{intent, settings, Outcome};
+use crate::{conflicts, intent, settings, Outcome};
 
 #[derive(clap::Args, Default)]
 pub struct Args {
@@ -40,6 +41,8 @@ pub struct Session {
     pub git: Git,
     pub config: HarnessConfig,
     pub manifest: AgentManifest,
+    /// The working tree's structural changes, for conflict detection.
+    pub working_set: ChangeSet,
     /// Non-blocking notes shown in the human report.
     pub notes: Vec<String>,
 }
@@ -57,6 +60,7 @@ pub fn run(dir: &Path, args: &Args) -> Result<Outcome> {
 pub fn run_with(dir: &Path, args: &Args, backend: &dyn SandboxBackend) -> Result<Outcome> {
     let mut session = open(dir, args)?;
     agent_policy(&mut session);
+    conflict_stage(&mut session)?;
     let report = sandbox_stage(&mut session, backend)?;
 
     let Session {
@@ -105,7 +109,17 @@ fn open(dir: &Path, args: &Args) -> Result<Session> {
     manifest.base_ref = base_ref;
     manifest.head = git.head().unwrap_or_default();
     let mut notes = vec![summarize(&changes)];
-    let ast = structural_diff(&git, base.as_deref(), &changes, &mut notes)?;
+    let ast = structural_diff(&git, base.as_deref(), None, &changes, &mut notes)?;
+    let working_set = ChangeSet {
+        name: git.current_branch().unwrap_or_else(|| "HEAD".to_string()),
+        files: changes
+            .iter()
+            .map(|c| FileChanges {
+                path: c.path.clone(),
+                changes: ast.get(&c.path).cloned().unwrap_or_default(),
+            })
+            .collect(),
+    };
     manifest.impacted_files = changes
         .iter()
         .map(|c| ImpactedFile {
@@ -127,14 +141,17 @@ fn open(dir: &Path, args: &Args) -> Result<Session> {
         git,
         config,
         manifest,
+        working_set,
         notes,
     })
 }
 
-/// Structural changes per file, for every file a parser claims.
+/// Structural changes per file, for every file a parser claims. `head` is
+/// a revision, or `None` for the working tree.
 pub fn structural_diff(
     git: &Git,
     base: Option<&str>,
+    head: Option<&str>,
     changes: &[FileChange],
     notes: &mut Vec<String>,
 ) -> Result<BTreeMap<String, Vec<AstChange>>> {
@@ -149,9 +166,10 @@ pub fn structural_diff(
             }
             _ => String::new(),
         };
-        let after = match change.kind {
-            ChangeKind::Deleted => String::new(),
-            _ => git.read_worktree(&change.path).unwrap_or_default(),
+        let after = match (change.kind, head) {
+            (ChangeKind::Deleted, _) => String::new(),
+            (_, Some(head)) => git.show(head, &change.path)?.unwrap_or_default(),
+            (_, None) => git.read_worktree(&change.path).unwrap_or_default(),
         };
         match parser.diff(&before, &after) {
             Ok(ast) => {
@@ -189,6 +207,58 @@ fn agent_policy(session: &mut Session) {
     } else {
         session.notes.push(msg);
     }
+}
+
+/// Compare the working tree with every sibling branch named by
+/// `[conflicts].branches`. Level 2 conflicts block.
+fn conflict_stage(session: &mut Session) -> Result<()> {
+    let patterns = &session.config.conflicts.branches;
+    if patterns.is_empty() {
+        return Ok(());
+    }
+    let current = session.working_set.name.clone();
+    let siblings: Vec<String> = session
+        .git
+        .branches()?
+        .into_iter()
+        .filter(|b| *b != current && harness_core::glob::any(patterns, b))
+        .collect();
+    let mut sets = vec![session.working_set.clone()];
+    for sibling in &siblings {
+        sets.push(conflicts::change_set(
+            &session.git,
+            &session.manifest.base_ref,
+            sibling,
+            false,
+            &mut session.notes,
+        )?);
+    }
+    let found: Vec<_> = harness_ast::conflict::detect(&sets)
+        .into_iter()
+        .filter(|c| c.branches.contains(&current))
+        .collect();
+    for c in &found {
+        if c.level >= 2 {
+            let other = c.branches.iter().find(|b| **b != current).cloned();
+            session.manifest.block(format!(
+                "semantic conflict with `{}` ({}): {}; fix: coordinate the two changes, or \
+                 rebase onto `{}` and adapt",
+                other.as_deref().unwrap_or("?"),
+                c.kind,
+                c.explanation,
+                other.as_deref().unwrap_or("?"),
+            ));
+        }
+    }
+    session
+        .manifest
+        .conflicts
+        .extend(found.iter().map(conflicts::report));
+    session.notes.push(format!(
+        "conflicts: compared with {} sibling branch(es)",
+        siblings.len()
+    ));
+    Ok(())
 }
 
 fn sandbox_stage(
@@ -578,6 +648,37 @@ mod tests {
             ["FunctionChanged:getUser", "SignatureChanged:getUser"]
         );
         assert_eq!(by_path("old.py"), ["FunctionRemoved:gone"]);
+    }
+
+    #[test]
+    fn sibling_branch_conflicts_block_the_run() {
+        let dir = repo(&[
+            ("harness.toml", "[conflicts]\nbranches = [\"agent/*\"]\n"),
+            ("lib.ts", "export function total(a: number) { return a; }\n"),
+        ]);
+        let p = dir.path();
+        crate::git::testing::git(p, &["checkout", "-q", "-b", "agent/other"]);
+        write(
+            p,
+            &[(
+                "lib.ts",
+                "export function sum(a: number) { return a + 0; }\n",
+            )],
+        );
+        crate::git::testing::git(p, &["commit", "-qam", "drop total"]);
+        crate::git::testing::git(p, &["checkout", "-q", "main"]);
+        write(
+            p,
+            &[("use.ts", "import { total } from \"./lib\";\ntotal(1);\n")],
+        );
+
+        let outcome = run_with(p, &Args::default(), &FakeBackend::new(&[])).expect("run");
+        assert_eq!(outcome, Outcome::Blocked);
+        let m = manifest_of(p);
+        assert_eq!(m.conflicts.len(), 1, "{:?}", m.conflicts);
+        assert_eq!(m.conflicts[0].kind, "removed-symbol");
+        assert_eq!(m.conflicts[0].branches, ["agent/other", "main"]);
+        assert!(m.blocking_reasons[0].contains("agent/other"));
     }
 
     #[test]
