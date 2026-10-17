@@ -4,9 +4,11 @@
 //! policy for newly introduced dependencies. Deterministic and offline —
 //! rule files and advisory snapshots are inputs, never network fetches.
 
+pub mod deps;
 pub mod diff;
 pub mod secrets;
 
+pub use deps::Policy;
 pub use diff::{added_lines, AddedLine};
 pub use secrets::Scanner;
 
