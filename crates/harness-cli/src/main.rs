@@ -17,6 +17,7 @@ mod hooks;
 mod init;
 mod intent;
 mod run;
+mod scan;
 mod settings;
 
 #[derive(Parser)]
@@ -44,6 +45,8 @@ enum Command {
     Run(run::Args),
     /// Detect semantic conflicts between concurrent agent branches.
     Conflicts(conflicts::Args),
+    /// Scan for secrets and policy-violating new dependencies (no sandbox).
+    Scan(scan::Args),
 }
 
 /// What a command decided, mapped to exit codes 0 and 1.
@@ -77,6 +80,7 @@ fn main() -> ExitCode {
         Command::Check(args) => check::run(&dir, &args),
         Command::Run(args) => run::run(&dir, &args),
         Command::Conflicts(args) => conflicts::run(&dir, &args),
+        Command::Scan(args) => scan::run(&dir, &args),
     };
     match result {
         Ok(Outcome::Pass) => ExitCode::SUCCESS,

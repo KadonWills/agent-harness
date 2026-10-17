@@ -17,7 +17,8 @@ pub struct Args {
     /// Overwrite an existing harness.toml (and replace unmanaged hooks).
     #[arg(long)]
     pub force: bool,
-    /// Install the pre-push hook. Works on an existing config, too.
+    /// Install the pre-commit (scan) and pre-push (run) hooks. Works on an
+    /// existing config, too.
     #[arg(long)]
     pub hooks: bool,
 }
