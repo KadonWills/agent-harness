@@ -107,6 +107,33 @@ impl TreeSitterParser {
         .visit(tree.root_node(), &mut Vec::new());
         Ok(symbols)
     }
+
+    /// Byte ranges of plain `identifier` nodes spelled `name` (property
+    /// accesses and strings never match).
+    pub fn identifier_ranges(
+        &self,
+        source: &str,
+        name: &str,
+    ) -> Result<Vec<std::ops::Range<usize>>, Error> {
+        let mut parser = Parser::new();
+        parser
+            .set_language(&(self.spec.grammar)())
+            .map_err(|e| Error::Parse(format!("{}: {e}", self.spec.name)))?;
+        let tree = parser
+            .parse(source, None)
+            .ok_or_else(|| Error::Parse(format!("{}: parser gave up", self.spec.name)))?;
+        let mut ranges = Vec::new();
+        let mut stack = vec![tree.root_node()];
+        while let Some(node) = stack.pop() {
+            if node.kind() == "identifier" && node.utf8_text(source.as_bytes()).ok() == Some(name) {
+                ranges.push(node.byte_range());
+            }
+            let mut cursor = node.walk();
+            stack.extend(node.children(&mut cursor));
+        }
+        ranges.sort_by_key(|r| r.start);
+        Ok(ranges)
+    }
 }
 
 impl LanguageParser for TreeSitterParser {
@@ -393,10 +420,10 @@ pub fn diff_symbols(before: &Symbols, after: &Symbols) -> Vec<AstChange> {
     for dep in before.imports.difference(&after.imports) {
         changes.push(AstChange::DependencyRemoved(dep.clone()));
     }
+    // Declarations count too: `const email = (u) => u.email` both declares
+    // and reads `email`. Rules that care discount definitions themselves.
     for ident in after.identifiers.difference(&before.identifiers) {
-        if !after.declared.contains(ident) {
-            changes.push(AstChange::ReferenceAdded(ident.clone()));
-        }
+        changes.push(AstChange::ReferenceAdded(ident.clone()));
     }
     changes
 }
@@ -432,6 +459,8 @@ mod tests {
                 "FunctionAdded:f",
                 "TypeAdded:A",
                 "DependencyAdded:os",
+                "ReferenceAdded:A",
+                "ReferenceAdded:f",
                 "ReferenceAdded:os",
                 "ReferenceAdded:sep",
             ]
@@ -443,17 +472,19 @@ mod tests {
     }
 
     #[test]
-    fn new_references_exclude_names_the_file_declares() {
+    fn new_references_are_reported() {
         let before = "export function a() { return 1; }\n";
         let after = "export function a() { return helper(user.email); }\n\
                      function helper(x: string) { return x; }\n";
         let changes = diff(&TYPESCRIPT, before, after);
+        for name in ["email", "user", "helper"] {
+            let want = format!("ReferenceAdded:{name}");
+            assert!(changes.contains(&want), "{want} missing from {changes:?}");
+        }
         assert!(
-            changes.contains(&"ReferenceAdded:email".to_string()),
-            "{changes:?}"
+            !changes.contains(&"ReferenceAdded:a".to_string()),
+            "a existed before"
         );
-        assert!(changes.contains(&"ReferenceAdded:user".to_string()));
-        assert!(!changes.contains(&"ReferenceAdded:helper".to_string()));
     }
 
     #[test]

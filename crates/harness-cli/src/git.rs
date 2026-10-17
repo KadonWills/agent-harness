@@ -96,6 +96,14 @@ impl Git {
         Some(name.trim().to_string()).filter(|n| !n.is_empty())
     }
 
+    /// Local branch names, sorted.
+    pub fn branches(&self) -> Result<Vec<String>> {
+        let out = self.run(&["for-each-ref", "--format=%(refname:short)", "refs/heads"])?;
+        let mut names: Vec<String> = out.lines().map(str::to_string).collect();
+        names.sort();
+        Ok(names)
+    }
+
     /// The commit to diff against: the merge base of `base` and `head`.
     /// `None` when the repository has no commits yet (everything is new).
     pub fn merge_base(&self, base: &str, head: &str) -> Result<Option<String>> {
@@ -337,6 +345,7 @@ mod tests {
         git(dir.path(), &["commit", "-qam", "x"]);
         let g = Git::discover(dir.path()).expect("repo");
         assert_eq!(g.current_branch().as_deref(), Some("agent/x"));
+        assert_eq!(g.branches().expect("branches"), ["agent/x", "main"]);
         let base = g.merge_base("main", "agent/x").expect("mb").expect("some");
         let changes = g
             .changed_files(Some(&base), Some("agent/x"))

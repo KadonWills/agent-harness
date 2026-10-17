@@ -7,6 +7,7 @@
 //! workspace depends on it, and external plugins link against it.
 
 pub mod config;
+pub mod glob;
 pub mod manifest;
 
 /// Crate-level error type.
