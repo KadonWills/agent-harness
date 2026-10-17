@@ -10,6 +10,7 @@ use std::process::ExitCode;
 use clap::{Parser, Subcommand};
 
 mod check;
+mod conflicts;
 mod detect;
 mod git;
 mod hooks;
@@ -41,6 +42,8 @@ enum Command {
     Check(check::Args),
     /// Run the validation pipeline against pending agent changes.
     Run(run::Args),
+    /// Detect semantic conflicts between concurrent agent branches.
+    Conflicts(conflicts::Args),
 }
 
 /// What a command decided, mapped to exit codes 0 and 1.
@@ -73,6 +76,7 @@ fn main() -> ExitCode {
         Command::Init(args) => init::run(&dir, &args),
         Command::Check(args) => check::run(&dir, &args),
         Command::Run(args) => run::run(&dir, &args),
+        Command::Conflicts(args) => conflicts::run(&dir, &args),
     };
     match result {
         Ok(Outcome::Pass) => ExitCode::SUCCESS,

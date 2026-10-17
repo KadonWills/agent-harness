@@ -13,6 +13,8 @@
 
 use std::fmt;
 
+pub mod codemod;
+pub mod conflict;
 pub mod lang;
 pub mod walker;
 
