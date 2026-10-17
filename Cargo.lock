@@ -665,6 +665,7 @@ dependencies = [
  "harness-ast",
  "harness-core",
  "harness-runtime",
+ "harness-security",
  "serde",
  "serde_json",
  "sha2",

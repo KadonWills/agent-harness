@@ -10,7 +10,7 @@ use crate::git::Git;
 const MARKER: &str = "# managed by agentharness";
 
 /// The hooks `harness init --hooks` installs, with the command each runs.
-pub const HOOKS: &[(&str, &str)] = &[("pre-push", "run")];
+pub const HOOKS: &[(&str, &str)] = &[("pre-commit", "scan --staged"), ("pre-push", "run")];
 
 /// A POSIX sh hook (git runs hooks through sh on every platform).
 pub fn script(subcommand: &str) -> String {
@@ -73,8 +73,10 @@ mod tests {
         let dir = repo(&[]);
         let git = Git::discover(dir.path()).expect("repo");
         let written = install(&git, false).expect("install");
-        assert_eq!(written.len(), 1);
-        let text = std::fs::read_to_string(&written[0]).expect("hook");
+        assert_eq!(written.len(), 2);
+        let pre_commit = std::fs::read_to_string(&written[0]).expect("hook");
+        assert!(pre_commit.contains("exec harness scan --staged"));
+        let text = std::fs::read_to_string(&written[1]).expect("hook");
         assert!(text.starts_with("#!/bin/sh\n"));
         assert!(text.contains("exec harness run"));
         #[cfg(unix)]
