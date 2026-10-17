@@ -62,9 +62,13 @@ pub fn container_args(plan: &ExecutionPlan, name: &str) -> Vec<String> {
     let memory = format!("{}b", plan.limits.memory_bytes);
     let cpu = plan.limits.cpu_time.as_secs().max(1);
     let mount = format!("{}:{WORKDIR}", plan.workspace.display());
+    // The container outlives the session budget only briefly, then exits
+    // and `--rm` deletes it, even if harness itself was killed.
+    let lifetime = format!("sleep {}", plan.limits.timeout.as_secs() + 60);
     [
         "run",
         "--detach",
+        "--rm",
         "--name",
         name,
         "--network",
@@ -89,7 +93,7 @@ pub fn container_args(plan: &ExecutionPlan, name: &str) -> Vec<String> {
         "sh",
         &plan.image,
         "-c",
-        "while :; do sleep 3600; done",
+        &lifetime,
     ]
     .iter()
     .map(|s| s.to_string())
@@ -269,6 +273,8 @@ mod tests {
         assert_eq!(arg_after(&args, "--ulimit"), "cpu=300:300");
         assert_eq!(arg_after(&args, "--volume"), "/tmp/snap:/workspace");
         assert!(args.contains(&"no-new-privileges".to_string()));
+        assert!(args.contains(&"--rm".to_string()));
+        assert_eq!(args.last().map(String::as_str), Some("sleep 660"));
         assert_eq!(args.iter().filter(|a| *a == "node:22").count(), 1);
     }
 
