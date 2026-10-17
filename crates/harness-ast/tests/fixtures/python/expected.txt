@@ -1,0 +1,11 @@
+FunctionAdded:fetch
+FunctionRenamed:legacy_helper->double
+FunctionChanged:Store.__init__
+FunctionChanged:Store.load
+SignatureChanged:Store.load
+FunctionChanged:User.display
+TypeChanged:Store
+MemberRemoved:Store.cache
+TypeChanged:User
+MemberRemoved:User.email
+DependencyAdded:requests

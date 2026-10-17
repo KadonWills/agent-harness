@@ -1,0 +1,6 @@
+FunctionAdded:Cache.clear
+FunctionAdded:isEmpty
+FunctionChanged:handler
+SignatureChanged:handler
+TypeChanged:Cache
+DependencyAdded:lodash
