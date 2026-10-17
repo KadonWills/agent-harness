@@ -13,8 +13,10 @@
 │      │            (config,          (Tree-sitter               │
 │      │             manifest,         structural diff)          │
 │      │             shared types)                               │
-│      └──────────► harness-runtime                              │
-│                    (Docker / Wasmtime sandbox)                 │
+│      ├──────────► harness-runtime                              │
+│      │             (Docker / Wasmtime sandbox)                 │
+│      └──────────► harness-security                             │
+│                    (secrets, dependency policy)                │
 │                                                                 │
 │  Interception points: git hooks · `harness run` · GitHub Action │
 │  Output contract:     AgentManifest.json                        │
@@ -28,17 +30,18 @@
 ## Crate graph
 
 ```
-harness-cli ──► harness-ast ──► harness-core
-     │                              ▲
-     └────────► harness-runtime ────┘
+harness-cli ──► harness-ast ───────► harness-core
+     │                                  ▲  ▲
+     ├────────► harness-runtime ────────┘  │
+     └────────► harness-security ──────────┘
 ```
 
 Rules:
 - `harness-core` depends on nothing in the workspace and stays
   dependency-light. It is the contract crate: config schema, manifest
   schema, shared errors.
-- `harness-ast` and `harness-runtime` depend only on `harness-core`.
-  They never depend on each other.
+- `harness-ast`, `harness-runtime` and `harness-security` depend only on
+  `harness-core`. They never depend on each other.
 - `harness-cli` is the only binary and the only crate allowed to wire
   everything together.
 
@@ -51,8 +54,10 @@ Rules:
 4. **Execute** the project's validation commands in the sandbox
    (harness-runtime): network denied, resource-limited, egress attempts
    counted.
-5. **Gate**: security checks (secrets, dependency policy) + conflict checks
-   against sibling agent branches.
+5. **Gate**: conflict checks against sibling agent branches
+   (`[conflicts].branches`) and security checks (secrets in added lines,
+   policy for new dependencies). In code this runs before step 4, so the
+   cheap static checks report even when the sandbox fails.
 6. **Emit** `AgentManifest.json`; exit 0 (pass) or 1 (blocked) with a
    human- and agent-readable report.
 
