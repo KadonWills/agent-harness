@@ -41,6 +41,7 @@ jobs:
             core
             ast
             runtime
+            security
             docs
             ci
             deps
