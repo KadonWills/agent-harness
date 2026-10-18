@@ -53,6 +53,15 @@ on a demo repo with two concurrent agent branches. *Met:* see
 both blocked before commit on the demo repo. *Met:* the `pre-commit` hook
 from `harness init --hooks` blocks both.
 
+## Local UIs (RFC-0002, alongside v0.4)
+
+- [x] `harness tui` terminal UI (`tui` feature)
+- [x] `harness ui` local web UI on 127.0.0.1 (`web` feature)
+- [x] Run history in `.harness/history/`, live sandbox step progress
+
+Scope: one repository on one machine. Org dashboards, multi-repo views and
+hosted servers stay in the commercial cloud.
+
 ## v0.5 — "The Judge" (behavioral)
 
 - [ ] Performance baselines (time + peak memory) with regression thresholds
