@@ -46,7 +46,8 @@ Build from source:
 
 ```bash
 cargo install --locked --git https://github.com/KadonWills/agent-harness harness-cli
-# add `--features wasmtime` for the WASI sandbox backend
+# add `--features wasmtime` for the WASI sandbox backend,
+# `--features tui,web` for the terminal and web UIs
 
 cd your-repo
 harness init --hooks   # writes harness.toml; pre-commit = scan, pre-push = run
@@ -61,6 +62,8 @@ harness run            # snapshot → sandbox → AST diff → conflicts → sec
 | `harness run [--agent] [--intent\|--intent-file] [--base] [--manifest] [--json]` | The full gate; writes `.harness/AgentManifest.json` |
 | `harness scan [--staged\|--base] [--json]` | Secrets and new-dependency policy only (the pre-commit hook) |
 | `harness conflicts [--base] [--fix] [--json] [BRANCH...]` | Semantic conflicts between agent branches; `--fix` applies Level 1 codemods |
+| `harness tui` | Terminal UI over all of the above, plus run history (`--features tui`) |
+| `harness ui [--port] [--open]` | The same as a local web UI on 127.0.0.1, token-protected (`--features web`) |
 
 Exit codes: **0** pass, **1** the gate blocked, **2** harness could not run.
 In CI, use the [GitHub Action](docs/guides/github-action.md).
@@ -113,6 +116,7 @@ docs/                    PRD, architecture, ADRs, RFCs, guides
 
 - [Product requirements](docs/PRD.md) · [Roadmap](docs/ROADMAP.md)
 - [Architecture](docs/ARCHITECTURE.md) · [Decision records](docs/adr/)
+- [Terminal and web UIs](docs/guides/local-uis.md)
 - [Contributing](CONTRIBUTING.md) — including the
   [< 100-line language parser path](docs/guides/adding-a-language.md)
 - [Security policy](SECURITY.md) · [Governance](GOVERNANCE.md)

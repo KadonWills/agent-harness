@@ -67,7 +67,7 @@ git commit -s -m "feat(ast): add go parser"
 
 | Path | What lives there |
 |---|---|
-| `crates/harness-cli` | the `harness` binary — `init`, `check`, `run` |
+| `crates/harness-cli` | the `harness` binary and library: `init`, `check`, `run`, `scan`, `conflicts`; `tui` and `ui` behind features |
 | `crates/harness-core` | config + `AgentManifest` contracts; keep dependency-light |
 | `crates/harness-ast` | Tree-sitter structural diff engine |
 | `crates/harness-runtime` | sandbox backends (Docker; Wasmtime behind the `wasmtime` feature) |

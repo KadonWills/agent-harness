@@ -43,7 +43,10 @@ Rules:
 - `harness-ast`, `harness-runtime` and `harness-security` depend only on
   `harness-core`. They never depend on each other.
 - `harness-cli` is the only binary and the only crate allowed to wire
-  everything together.
+  everything together. It is also a library (`harness_cli::{check, run,
+  scan, conflicts, history}`), so the optional terminal UI (`tui` feature)
+  and local web UI (`web` feature) call exactly the functions the CLI
+  calls and never decide a verdict themselves (RFC-0002).
 
 ## Data flow of `harness run`
 
@@ -58,8 +61,9 @@ Rules:
    (`[conflicts].branches`) and security checks (secrets in added lines,
    policy for new dependencies). In code this runs before step 4, so the
    cheap static checks report even when the sandbox fails.
-6. **Emit** `AgentManifest.json`; exit 0 (pass) or 1 (blocked) with a
-   human- and agent-readable report.
+6. **Emit** `AgentManifest.json`, plus a copy in `.harness/history/`
+   (newest 50 kept), then exit 0 (pass) or 1 (blocked) with a human- and
+   agent-readable report.
 
 ## Extension points
 
