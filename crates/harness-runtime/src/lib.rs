@@ -19,6 +19,8 @@ pub mod docker;
 pub mod egress;
 mod process;
 pub mod snapshot;
+#[cfg(feature = "wasmtime")]
+pub mod wasm;
 
 pub use docker::DockerBackend;
 pub use snapshot::Snapshot;
@@ -138,6 +140,9 @@ pub trait SandboxBackend: Send + Sync {
 pub fn backend_for(provider: &str) -> Result<Box<dyn SandboxBackend>, Error> {
     match provider {
         "docker" => Ok(Box::new(DockerBackend::default())),
+        #[cfg(feature = "wasmtime")]
+        "wasmtime" => Ok(Box::new(wasm::WasmtimeBackend)),
+        #[cfg(not(feature = "wasmtime"))]
         "wasmtime" => Err(Error::BackendUnavailable(
             "this build has no wasmtime backend\nfix: rebuild with `--features wasmtime`, \
              or set sandbox.provider = \"docker\""
