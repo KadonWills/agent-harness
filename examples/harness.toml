@@ -1,14 +1,37 @@
 # AgentHarness configuration — canonical example.
 # This file is parsed by harness-core's test suite; keep it valid.
+# Every field is optional; an empty file is valid and zero-trust.
 
 [project]
 name = "core-api"
+base_ref = "main"          # the ref `harness run` diffs against
 
 [sandbox]
-provider = "docker"       # "docker" locally today; "wasmtime" planned (v0.3)
-allow_egress = false      # zero-trust default: no outbound network in the sandbox
+provider = "docker"        # "docker" or "wasmtime"
+allow_egress = false       # zero-trust default: no outbound network in the sandbox
 max_memory = "512MB"
+image = "node:22-bookworm-slim"
+timeout = "10m"            # wall-clock budget for the whole session
+max_cpu_time = "5m"        # per-process CPU-time ceiling
+allow_setup_egress = true  # network for [validation].setup only (dependency install)
+
+[validation]
+setup = ["npm ci"]
+commands = ["npm test"]
 
 [agents]
 allowed = ["claude-code", "cline", "github-copilot"]
-strict_mode = true        # reject sessions from agents not listed above
+strict_mode = true         # reject sessions from agents not listed above
+
+[conflicts]
+branches = ["agent/*"]     # sibling agent branches checked for semantic conflicts
+
+[security]
+scan_secrets = true
+secret_rules = ""          # optional gitleaks-format rules, merged with the built-ins
+
+[security.dependencies]
+allow = []                 # when non-empty, new dependencies must match a glob here
+deny = ["event-stream"]    # new dependencies matching these globs are blocked
+typosquat_check = true
+advisory_db = ""           # optional directory of OSV JSON advisories (offline)
