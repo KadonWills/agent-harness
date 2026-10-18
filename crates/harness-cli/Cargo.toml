@@ -15,6 +15,8 @@ path = "src/main.rs"
 default = []
 # The WASI sandbox backend (sandbox.provider = "wasmtime").
 wasmtime = ["harness-runtime/wasmtime"]
+# `harness tui`, the terminal UI (RFC-0002).
+tui = ["dep:ratatui"]
 
 [dependencies]
 harness-core.workspace = true
@@ -29,6 +31,7 @@ serde.workspace = true
 serde_json.workspace = true
 toml.workspace = true
 sha2.workspace = true
+ratatui = { workspace = true, optional = true }
 
 [dev-dependencies]
 tempfile.workspace = true

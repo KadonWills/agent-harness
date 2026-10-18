@@ -37,6 +37,20 @@ enum Command {
     Conflicts(conflicts::Args),
     /// Scan for secrets and policy-violating new dependencies (no sandbox).
     Scan(scan::Args),
+    /// Open the terminal UI (needs the `tui` feature).
+    Tui,
+}
+
+#[cfg(feature = "tui")]
+fn tui(dir: &std::path::Path) -> anyhow::Result<Outcome> {
+    harness_cli::tui::run(dir)
+}
+
+#[cfg(not(feature = "tui"))]
+fn tui(_: &std::path::Path) -> anyhow::Result<Outcome> {
+    anyhow::bail!(
+        "this build has no terminal UI\nfix: reinstall with `cargo install harness-cli --features tui`"
+    )
 }
 
 fn main() -> ExitCode {
@@ -64,6 +78,7 @@ fn main() -> ExitCode {
         Command::Run(args) => run::run(&dir, &args),
         Command::Conflicts(args) => conflicts::run(&dir, &args),
         Command::Scan(args) => scan::run(&dir, &args),
+        Command::Tui => tui(&dir),
     };
     match result {
         Ok(Outcome::Pass) => ExitCode::SUCCESS,
