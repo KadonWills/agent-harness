@@ -16,7 +16,7 @@ pub struct Args {
     pub json: bool,
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 pub struct Report {
     pub ok: bool,
     pub problems: Vec<Problem>,
@@ -24,9 +24,7 @@ pub struct Report {
 }
 
 pub fn run(dir: &Path, args: &Args) -> Result<Outcome> {
-    let report = inspect(dir, &|provider| {
-        harness_runtime::backend_for(provider).and_then(|b| b.check_available())
-    });
+    let report = status(dir);
     if args.json {
         println!("{}", serde_json::to_string_pretty(&report)?);
     } else {
@@ -36,6 +34,13 @@ pub fn run(dir: &Path, args: &Args) -> Result<Outcome> {
         Outcome::Pass
     } else {
         Outcome::Blocked
+    })
+}
+
+/// Every check, probing the real sandbox backend.
+pub fn status(dir: &Path) -> Report {
+    inspect(dir, &|provider| {
+        harness_runtime::backend_for(provider).and_then(|b| b.check_available())
     })
 }
 

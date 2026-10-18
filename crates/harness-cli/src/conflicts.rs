@@ -28,11 +28,26 @@ pub struct Args {
     pub branches: Vec<String>,
 }
 
-#[derive(Serialize)]
-struct Report<'a> {
-    branches: &'a [String],
-    conflicts: Vec<ConflictReport>,
-    fixed: &'a [String],
+/// What `harness conflicts` found (and fixed).
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct Analysis {
+    pub branches: Vec<String>,
+    pub conflicts: Vec<ConflictReport>,
+    /// Files rewritten by Level 1 fixes, as `path: \`from\` -> \`to\``.
+    pub fixed: Vec<String>,
+    #[serde(skip)]
+    pub notes: Vec<String>,
+}
+
+impl Analysis {
+    /// Level 2 conflicts need a human.
+    pub fn outcome(&self) -> Outcome {
+        if self.conflicts.iter().any(|c| c.level >= 2) {
+            Outcome::Blocked
+        } else {
+            Outcome::Pass
+        }
+    }
 }
 
 /// The manifest form of a conflict.
@@ -73,26 +88,35 @@ pub fn change_set(
 }
 
 pub fn run(dir: &Path, args: &Args) -> Result<Outcome> {
+    let analysis = analyze(dir, args.base.as_deref(), &args.branches, args.fix)?;
+    if args.json {
+        println!("{}", serde_json::to_string_pretty(&analysis)?);
+    }
+    print_human(&analysis);
+    Ok(analysis.outcome())
+}
+
+/// Compare `branches` (default: those matching `[conflicts].branches`),
+/// optionally applying Level 1 fixes to the checked-out branch. Prints
+/// nothing.
+pub fn analyze(dir: &Path, base: Option<&str>, branches: &[String], fix: bool) -> Result<Analysis> {
     let git = Git::discover(dir)?;
     let config = settings::load_valid(git.root())?;
-    let base_ref = args
-        .base
-        .clone()
-        .unwrap_or_else(|| config.project.base_ref.clone());
+    let base_ref = base.map_or_else(|| config.project.base_ref.clone(), str::to_string);
     let current = git.current_branch();
 
-    let branches: Vec<String> = if args.branches.is_empty() {
+    let branches: Vec<String> = if branches.is_empty() {
         git.branches()?
             .into_iter()
             .filter(|b| harness_core::glob::any(&config.conflicts.branches, b))
             .collect()
     } else {
-        for b in &args.branches {
+        for b in branches {
             if git.resolve(b).is_none() {
                 bail!("branch `{b}` does not exist\nfix: check `git branch --list`");
             }
         }
-        args.branches.clone()
+        branches.to_vec()
     };
     if branches.len() < 2 {
         bail!(
@@ -112,7 +136,7 @@ pub fn run(dir: &Path, args: &Args) -> Result<Outcome> {
     let mut found = conflict::detect(&sets);
 
     let mut fixed = Vec::new();
-    if args.fix {
+    if fix {
         if let Some(current) = &current {
             fixed = apply_fixes(&git, current, &found)?;
             if !fixed.is_empty() {
@@ -126,20 +150,11 @@ pub fn run(dir: &Path, args: &Args) -> Result<Outcome> {
         }
     }
 
-    let reports: Vec<ConflictReport> = found.iter().map(report).collect();
-    if args.json {
-        let out = Report {
-            branches: &branches,
-            conflicts: reports.clone(),
-            fixed: &fixed,
-        };
-        println!("{}", serde_json::to_string_pretty(&out)?);
-    }
-    print_human(&branches, &reports, &fixed, &notes);
-    Ok(if reports.iter().any(|c| c.level >= 2) {
-        Outcome::Blocked
-    } else {
-        Outcome::Pass
+    Ok(Analysis {
+        branches,
+        conflicts: found.iter().map(report).collect(),
+        fixed,
+        notes,
     })
 }
 
@@ -169,12 +184,13 @@ fn apply_fixes(git: &Git, current: &str, found: &[Conflict]) -> Result<Vec<Strin
     Ok(fixed)
 }
 
-fn print_human(
-    branches: &[String],
-    reports: &[ConflictReport],
-    fixed: &[String],
-    notes: &[String],
-) {
+fn print_human(analysis: &Analysis) {
+    let Analysis {
+        branches,
+        conflicts: reports,
+        fixed,
+        notes,
+    } = analysis;
     eprintln!("harness conflicts · {}", branches.join(" · "));
     for f in fixed {
         eprintln!("  fixed {f}");
@@ -249,6 +265,10 @@ mod tests {
         let dir = schema_drift_repo();
         let outcome = run(dir.path(), &Args::default()).expect("run");
         assert_eq!(outcome, Outcome::Blocked);
+        let analysis = analyze(dir.path(), None, &[], false).expect("analyze");
+        assert_eq!(analysis.branches.len(), 2);
+        assert_eq!(analysis.conflicts[0].level, 2);
+        assert_eq!(analysis.outcome(), Outcome::Blocked);
 
         let g = Git::discover(dir.path()).expect("repo");
         let mut notes = Vec::new();
