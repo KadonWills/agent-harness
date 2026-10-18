@@ -41,6 +41,9 @@ tree-sitter-typescript = "0.23"
 tree-sitter-javascript = "0.25"
 tree-sitter-python = "0.25"
 ratatui = { version = "0.30", default-features = false, features = ["crossterm", "layout-cache"] }
+axum = { version = "0.8", default-features = false, features = ["http1", "json", "query", "tokio"] }
+tokio = { version = "1", features = ["rt-multi-thread", "net", "signal", "sync"] }
+getrandom = "0.4"
 
 [profile.release]
 lto = "thin"
