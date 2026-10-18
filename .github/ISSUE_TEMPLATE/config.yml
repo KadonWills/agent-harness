@@ -1,8 +1,11 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Questions & design discussion
-    url: https://github.com/KadonWills/agent-harness/discussions
-    about: Use Discussions for questions — issues are for bugs and concrete proposals.
+  - name: Question or help using harness
+    url: https://github.com/KadonWills/agent-harness/discussions/categories/q-a
+    about: Ask in Discussions — issues are for bugs and concrete proposals.
+  - name: Idea or early design discussion
+    url: https://github.com/KadonWills/agent-harness/discussions/categories/ideas
+    about: Sound out a change before writing an issue or RFC.
   - name: Security vulnerability
-    url: https://github.com/KadonWills/agent-harness/security/policy
-    about: Never open a public issue for a vulnerability.
+    url: https://github.com/KadonWills/agent-harness/security/advisories/new
+    about: Report privately. Never open a public issue for a vulnerability.

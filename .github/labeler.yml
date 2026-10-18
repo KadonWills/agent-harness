@@ -24,3 +24,6 @@
       - any-glob-to-any-file:
           - crates/harness-core/src/config.rs
           - crates/harness-core/src/manifest.rs
+"rfc":
+  - changed-files:
+      - any-glob-to-any-file: docs/rfcs/0[0-9][0-9][0-9]-*.md

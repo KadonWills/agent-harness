@@ -103,7 +103,7 @@ Adding one is a mapping table of under 100 lines — see
 ## Repository layout
 
 ```
-crates/harness-cli       the `harness` binary
+crates/harness-cli       the `harness` binary and library (TUI, web UI)
 crates/harness-core      config + AgentManifest contracts (dependency-light)
 crates/harness-ast       Tree-sitter structural diff engine
 crates/harness-runtime   sandbox backends (Docker, Wasmtime)
@@ -114,9 +114,11 @@ docs/                    PRD, architecture, ADRs, RFCs, guides
 
 ## Documentation
 
+The [documentation map](docs/README.md) routes you by task. Highlights:
+
 - [Product requirements](docs/PRD.md) · [Roadmap](docs/ROADMAP.md)
-- [Architecture](docs/ARCHITECTURE.md) · [Decision records](docs/adr/)
-- [Terminal and web UIs](docs/guides/local-uis.md)
+- [Architecture](docs/ARCHITECTURE.md) · [Decision records](docs/adr/README.md) · [RFCs](docs/rfcs/README.md)
+- [GitHub Action](docs/guides/github-action.md) · [Terminal and web UIs](docs/guides/local-uis.md)
 - [Contributing](CONTRIBUTING.md) — including the
   [< 100-line language parser path](docs/guides/adding-a-language.md)
 - [Security policy](SECURITY.md) · [Governance](GOVERNANCE.md)
@@ -128,7 +130,13 @@ project exists to promote: format, lints, tests on three OSes, coverage,
 conventional commits, DCO, license/advisory audit, secret scan, and semver
 checks. If the gate is green and a maintainer approves, it merges. Start
 with [CONTRIBUTING.md](CONTRIBUTING.md) or a
-[`good-first-issue`](https://github.com/KadonWills/agent-harness/labels/good-first-issue).
+[`good first issue`](https://github.com/KadonWills/agent-harness/labels/good%20first%20issue).
+
+## Community
+
+- Questions and ideas: [Discussions](https://github.com/KadonWills/agent-harness/discussions) — see [SUPPORT.md](SUPPORT.md)
+- Vulnerabilities: report privately per [SECURITY.md](SECURITY.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md) · [Governance](GOVERNANCE.md) · [Maintainers](MAINTAINERS.md)
 
 ## License
 

@@ -1,0 +1,25 @@
+# Categories for GitHub's generated release notes, keyed on PR labels.
+changelog:
+  exclude:
+    labels: [duplicate, wontfix]
+  categories:
+    - title: Breaking changes
+      labels: [breaking-change]
+    - title: Security
+      labels: [security, area/security]
+    - title: Command line and UIs
+      labels: [area/cli]
+    - title: Structural diff
+      labels: [area/ast]
+    - title: Sandbox
+      labels: [area/runtime]
+    - title: Config and manifest
+      labels: [area/core, contract-change]
+    - title: Documentation
+      labels: [area/docs, documentation]
+    - title: Dependencies
+      labels: [dependencies]
+    - title: CI and tooling
+      labels: [area/ci]
+    - title: Other changes
+      labels: ["*"]

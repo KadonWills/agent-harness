@@ -1,0 +1,18 @@
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+    validations:
+      required: true
+  - type: textarea
+    id: check
+    attributes:
+      label: Output of `harness check --json`
+      description: Optional, but it answers most configuration questions. Scrub anything sensitive.
+      render: json
+  - type: input
+    id: version
+    attributes:
+      label: Harness version and OS
+      placeholder: "harness 0.1.0, macOS 15, docker"

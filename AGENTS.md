@@ -72,7 +72,7 @@ git commit -s -m "feat(ast): add go parser"
 | `crates/harness-ast` | Tree-sitter structural diff engine |
 | `crates/harness-runtime` | sandbox backends (Docker; Wasmtime behind the `wasmtime` feature) |
 | `crates/harness-security` | secret scanning and dependency policy |
-| `docs/` | PRD, architecture, ADRs, RFCs, guides |
+| `docs/` | PRD, architecture, ADRs, RFCs, guides — [docs/README.md](docs/README.md) maps them; review and merge rules are in [docs/MAINTAINING.md](docs/MAINTAINING.md) |
 | `examples/harness.toml` | parsed by `harness-core`'s tests — keep it valid |
 
 Adding a language parser is the best-scoped first contribution: see

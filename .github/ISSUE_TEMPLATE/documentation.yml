@@ -1,0 +1,25 @@
+name: Documentation
+description: Something in the docs is missing, wrong, or unclear
+labels: [documentation, area/docs, needs-triage]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Page
+      description: Link or path, e.g. docs/guides/github-action.md
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong or missing
+      description: If a command or example did not work as written, paste what you ran and what happened.
+    validations:
+      required: true
+  - type: dropdown
+    id: volunteering
+    attributes:
+      label: Would you like to fix it?
+      options: ["Yes, I'll open a PR", "No"]
+    validations:
+      required: true

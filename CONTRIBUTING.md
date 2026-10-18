@@ -26,7 +26,24 @@ Green gate + one maintainer approval = merge.
 | Bug fix | issues labeled `bug` | any |
 | Docs | anything unclear you just hit | any |
 | New feature | **open an RFC first** (docs/rfcs/) for anything touching harness.toml, the manifest, public traits, or CLI surface | RFC → PR |
-| Good first issue | issues labeled `good-first-issue` | small |
+| Good first issue | issues labeled [`good first issue`](https://github.com/KadonWills/agent-harness/labels/good%20first%20issue) | small |
+| Help wanted | issues labeled [`help wanted`](https://github.com/KadonWills/agent-harness/labels/help%20wanted) | any |
+
+Not sure where to start? Ask in
+[Discussions](https://github.com/KadonWills/agent-harness/discussions) —
+saying what you know and what you'd like to learn is enough.
+
+## Your first contribution
+
+1. Pick an issue and comment that you are taking it, so nobody duplicates
+   the work. If you go quiet for two weeks, it may be reassigned.
+2. Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the crate you
+   are touching. [docs/README.md](docs/README.md) maps the rest.
+3. Install a Rust toolchain via [rustup](https://rustup.rs) — the repo's
+   `rust-toolchain.toml` selects the right version — plus Docker if you
+   want to run the sandbox tests end to end.
+4. Open a draft PR early if you want feedback on direction before
+   polishing.
 
 ## Development workflow
 
@@ -52,15 +69,21 @@ Green gate + one maintainer approval = merge.
    Use `git commit -s` to add the sign-off. Allowed types: `feat`, `fix`,
    `docs`, `test`, `refactor`, `perf`, `chore`, `ci`, `build`. Scope is
    the crate short name (`cli`, `core`, `ast`, `runtime`, `security`) or area
-   (`docs`, `ci`).
+   (`docs`, `ci`, `deps`). The subject starts lower-case.
+
+   Forgot the sign-off? `git commit --amend -s --no-edit` for the last
+   commit, or `git rebase --signoff main` for all of them, then
+   `git push --force-with-lease`.
 6. **Open the PR.** The template asks what/why/how-tested; fill it in.
    PR titles must themselves be valid conventional commit headers — they
    become the squash-merge commit.
 
 ## What CI enforces (the automated gate)
 
-Every PR runs through `.github/workflows/`; all of these are required
-checks — a PR cannot merge with any of them red:
+Every PR runs through `.github/workflows/`. Branch protection requires
+`Gate` (which covers formatting, lints, tests, docs, and MSRV), the PR
+title and DCO checks, cargo-deny, gitleaks, and dependency review — a PR
+cannot merge with any of them red:
 
 | Check | Workflow | Fails when |
 |---|---|---|
@@ -74,7 +97,9 @@ checks — a PR cannot merge with any of them red:
 | Coverage | coverage.yml | patch coverage < 70% or project coverage drops — **inactive until the `CODECOV_TOKEN` secret is set**; see the note in `coverage.yml` |
 | Licenses/advisories | security.yml | cargo-deny finds a disallowed license, yanked crate, or advisory |
 | Secrets | security.yml | gitleaks finds a credential in the diff |
-| API breakage | semver.yml | cargo-semver-checks finds an unacknowledged breaking change in a published crate (label `breaking-change` + RFC link to acknowledge) |
+| New dependencies | dependency-review.yml | a new dependency has a known vulnerability or a licence outside `deny.toml`'s allowlist |
+| Action smoke test | action-smoke.yml | the GitHub Action stops passing a good change or blocking a bad one |
+| API breakage | semver.yml | cargo-semver-checks finds an unacknowledged breaking change — **disabled until the first crates.io publish**, see [ADR-0005](docs/adr/0005-crate-naming.md) |
 
 The gate is strict on purpose: this project's whole thesis is that
 automated validation beats human vigilance. We apply it to ourselves first.
@@ -97,7 +122,15 @@ Changes to any public contract — `harness.toml` schema, `AgentManifest.json`,
 the `LanguageParser`/`SandboxBackend` traits, CLI commands/flags/exit codes —
 start as an RFC: copy `docs/rfcs/0000-template.md` to the next number, open
 a PR, discussion happens on that PR. Accepted RFCs merge before their
-implementation PRs.
+implementation PRs. The full process and the index of RFCs are in
+[docs/rfcs/README.md](docs/rfcs/README.md).
+
+## Review and merge
+
+What happens after you open a PR — review order, response-time goals,
+squash merging, and how stacked PRs are merged — is in
+[docs/MAINTAINING.md](docs/MAINTAINING.md). In short: green gate, one
+code-owner approval, resolved conversations, then a squash merge.
 
 ## Code style
 
@@ -115,7 +148,9 @@ agree your contribution is licensed the same way. No CLA.
 
 ## Getting help
 
-- GitHub Discussions for questions and design talk
-- Issues for bugs and concrete proposals
-- Security reports: see SECURITY.md — never open a public issue for a
-  vulnerability
+See [SUPPORT.md](SUPPORT.md). In short: Discussions for questions and
+design talk, issues for bugs and concrete proposals, and
+[SECURITY.md](SECURITY.md) for vulnerabilities — never a public issue.
+
+Everyone taking part is expected to follow the
+[Code of Conduct](CODE_OF_CONDUCT.md).
