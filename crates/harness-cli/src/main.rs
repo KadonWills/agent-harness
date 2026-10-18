@@ -8,17 +8,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
-
-mod check;
-mod conflicts;
-mod detect;
-mod git;
-mod hooks;
-mod init;
-mod intent;
-mod run;
-mod scan;
-mod settings;
+use harness_cli::{check, conflicts, init, run, scan, Outcome};
 
 #[derive(Parser)]
 #[command(
@@ -47,13 +37,6 @@ enum Command {
     Conflicts(conflicts::Args),
     /// Scan for secrets and policy-violating new dependencies (no sandbox).
     Scan(scan::Args),
-}
-
-/// What a command decided, mapped to exit codes 0 and 1.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Outcome {
-    Pass,
-    Blocked,
 }
 
 fn main() -> ExitCode {

@@ -26,7 +26,7 @@ pub struct Args {
 }
 
 /// What the security gate found.
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 pub struct Findings {
     pub secrets: Vec<SecretFinding>,
     pub dependencies: Vec<DependencyFinding>,
@@ -60,6 +60,26 @@ impl Findings {
 pub enum Target<'a> {
     WorkingTree { base: Option<&'a str> },
     Staged,
+}
+
+/// Scan the repository at `dir`: the index when `staged`, otherwise the
+/// working tree against its merge base with `base` (default:
+/// `project.base_ref`). Prints nothing.
+pub fn analyze(dir: &Path, staged: bool, base: Option<&str>) -> Result<Findings> {
+    let git = Git::discover(dir)?;
+    let config = settings::load_valid(git.root())?;
+    if staged {
+        return inspect(&git, &config, &Target::Staged);
+    }
+    let base_ref = base.unwrap_or(&config.project.base_ref);
+    let base = git.merge_base(base_ref, "HEAD")?;
+    inspect(
+        &git,
+        &config,
+        &Target::WorkingTree {
+            base: base.as_deref(),
+        },
+    )
 }
 
 /// Run both checks. Errors only for unusable configuration.
@@ -120,24 +140,7 @@ pub fn inspect(git: &Git, config: &HarnessConfig, target: &Target<'_>) -> Result
 }
 
 pub fn run(dir: &Path, args: &Args) -> Result<Outcome> {
-    let git = Git::discover(dir)?;
-    let config = settings::load_valid(git.root())?;
-    let findings = if args.staged {
-        inspect(&git, &config, &Target::Staged)?
-    } else {
-        let base_ref = args
-            .base
-            .clone()
-            .unwrap_or_else(|| config.project.base_ref.clone());
-        let base = git.merge_base(&base_ref, "HEAD")?;
-        inspect(
-            &git,
-            &config,
-            &Target::WorkingTree {
-                base: base.as_deref(),
-            },
-        )?
-    };
+    let findings = analyze(dir, args.staged, args.base.as_deref())?;
     if args.json {
         println!("{}", serde_json::to_string_pretty(&findings)?);
     }
@@ -209,6 +212,8 @@ mod tests {
         assert_eq!(f.dependencies.len(), 1);
         assert_eq!(f.dependencies[0].name, "lodahs");
         assert_eq!(f.blocking_reasons().len(), 2);
+        let same = analyze(p, false, Some("HEAD")).expect("analyze");
+        assert_eq!((same.secrets.len(), same.dependencies.len()), (1, 1));
     }
 
     #[test]

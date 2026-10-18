@@ -8,13 +8,13 @@ use harness_ast::conflict::{ChangeSet, FileChanges};
 use harness_ast::AstChange;
 use harness_core::config::HarnessConfig;
 use harness_core::manifest::{AgentManifest, ImpactedFile, SandboxStatus, Verdict};
-use harness_runtime::{ExecutionPlan, SandboxBackend, SessionReport, Snapshot};
+use harness_runtime::{ExecutionPlan, Progress, SandboxBackend, SessionReport, Snapshot};
 
 use crate::git::{ChangeKind, FileChange, Git};
 use crate::init::STATE_DIR;
-use crate::{conflicts, intent, scan, settings, Outcome};
+use crate::{conflicts, history, intent, scan, settings, Outcome};
 
-#[derive(clap::Args, Default)]
+#[derive(clap::Args, Clone, Default)]
 pub struct Args {
     /// Identifier of the agent that made the change (checked against agents.allowed).
     #[arg(long, env = "HARNESS_AGENT")]
@@ -49,42 +49,87 @@ pub struct Session {
     pub notes: Vec<String>,
 }
 
+/// A finished gate run.
+#[derive(Debug)]
+pub struct Completed {
+    pub manifest: AgentManifest,
+    /// Step output; `None` when the sandbox was skipped.
+    pub report: Option<SessionReport>,
+    /// Non-blocking notes shown in the human report.
+    pub notes: Vec<String>,
+    pub manifest_path: PathBuf,
+}
+
+impl Completed {
+    pub fn outcome(&self) -> Outcome {
+        match self.manifest.verdict {
+            Verdict::Pass => Outcome::Pass,
+            _ => Outcome::Blocked,
+        }
+    }
+}
+
 pub fn run(dir: &Path, args: &Args) -> Result<Outcome> {
-    let config_provider = {
-        let git = Git::discover(dir)?;
-        settings::load_valid(git.root())?.sandbox.provider
-    };
-    let backend = harness_runtime::backend_for(&config_provider)?;
+    let backend = backend(dir)?;
     run_with(dir, args, backend.as_ref())
+}
+
+/// The sandbox backend `sandbox.provider` selects for the repository at `dir`.
+pub fn backend(dir: &Path) -> Result<Box<dyn SandboxBackend>> {
+    let git = Git::discover(dir)?;
+    let provider = settings::load_valid(git.root())?.sandbox.provider;
+    Ok(harness_runtime::backend_for(&provider)?)
 }
 
 /// The gate with an injectable backend (tests use a fake one).
 pub fn run_with(dir: &Path, args: &Args, backend: &dyn SandboxBackend) -> Result<Outcome> {
+    let done = execute(dir, args, backend, &mut |_| {})?;
+    if args.json {
+        println!("{}", done.manifest.to_json()?);
+    }
+    print_human(
+        &done.manifest,
+        done.report.as_ref(),
+        &done.notes,
+        &done.manifest_path,
+    );
+    Ok(done.outcome())
+}
+
+/// Run every stage, write the manifest and record it in the history.
+/// Prints nothing; `observer` sees sandbox steps as they run.
+pub fn execute(
+    dir: &Path,
+    args: &Args,
+    backend: &dyn SandboxBackend,
+    observer: &mut dyn FnMut(Progress<'_>),
+) -> Result<Completed> {
     let mut session = open(dir, args)?;
     agent_policy(&mut session);
     conflict_stage(&mut session)?;
     security_stage(&mut session)?;
-    let report = sandbox_stage(&mut session, backend)?;
+    let report = sandbox_stage(&mut session, backend, observer)?;
 
     let Session {
         git,
         mut manifest,
-        notes,
+        mut notes,
         ..
     } = session;
     manifest.finalize();
-    let path = args
+    let manifest_path = args
         .manifest
         .clone()
         .unwrap_or_else(|| git.root().join(STATE_DIR).join("AgentManifest.json"));
-    write_manifest(&path, &manifest)?;
-    if args.json {
-        println!("{}", manifest.to_json()?);
+    write_manifest(&manifest_path, &manifest)?;
+    if let Err(e) = history::record(git.root(), &manifest) {
+        notes.push(format!("run history not updated: {e:#}"));
     }
-    print_human(&manifest, report.as_ref(), &notes, &path);
-    Ok(match manifest.verdict {
-        Verdict::Pass => Outcome::Pass,
-        _ => Outcome::Blocked,
+    Ok(Completed {
+        manifest,
+        report,
+        notes,
+        manifest_path,
     })
 }
 
@@ -283,6 +328,7 @@ fn conflict_stage(session: &mut Session) -> Result<()> {
 fn sandbox_stage(
     session: &mut Session,
     backend: &dyn SandboxBackend,
+    observer: &mut dyn FnMut(Progress<'_>),
 ) -> Result<Option<SessionReport>> {
     let validation = &session.config.validation;
     if validation.setup.is_empty() && validation.commands.is_empty() {
@@ -308,7 +354,7 @@ fn sandbox_stage(
         &session.manifest.session_id,
         snapshot.path().to_path_buf(),
     )?;
-    let report = backend.execute(&plan)?;
+    let report = backend.execute_observed(&plan, observer)?;
 
     let manifest = &mut session.manifest;
     manifest.steps = report.steps.iter().map(|s| s.report.clone()).collect();
@@ -546,6 +592,31 @@ mod tests {
         );
         assert_eq!(m.base_ref, "main");
         assert_eq!(m.head.len(), 40);
+
+        let recorded = history::list(dir.path()).expect("history");
+        assert_eq!(recorded.len(), 1);
+        assert_eq!(recorded[0].manifest.session_id, m.session_id);
+    }
+
+    #[test]
+    fn execute_reports_progress_and_returns_the_manifest() {
+        let dir = repo(&[("harness.toml", CONFIG)]);
+        let mut seen = Vec::new();
+        let done = execute(
+            dir.path(),
+            &Args::default(),
+            &FakeBackend::new(&[0, 0]),
+            &mut |p| {
+                if let Progress::StepStarted { command, .. } = p {
+                    seen.push(command.to_string());
+                }
+            },
+        )
+        .expect("run");
+        assert_eq!(seen, ["install", "test"]);
+        assert_eq!(done.outcome(), Outcome::Pass);
+        assert_eq!(done.report.expect("sandbox ran").steps.len(), 2);
+        assert!(done.manifest_path.ends_with(".harness/AgentManifest.json"));
     }
 
     #[test]
