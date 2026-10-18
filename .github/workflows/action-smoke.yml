@@ -1,0 +1,62 @@
+# Dogfoods action.yml: a passing change must pass and a broken change must
+# be blocked, on a throwaway Python repository.
+name: Action smoke test
+
+on:
+  pull_request:
+    paths:
+      - action.yml
+      - crates/**
+      - .github/workflows/action-smoke.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Gate passes good changes and blocks bad ones
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create a throwaway repository
+        shell: bash
+        env:
+          DEMO: ${{ runner.temp }}/demo
+        run: |
+          mkdir -p "$DEMO" && cd "$DEMO"
+          git init -q -b main
+          printf 'def add(a, b):\n    return a + b\n' > calc.py
+          printf 'import unittest\nfrom calc import add\n\nclass T(unittest.TestCase):\n    def test_add(self):\n        self.assertEqual(add(2, 3), 5)\n' > test_calc.py
+          printf '[sandbox]\nimage = "python:3.12-slim"\n[validation]\ncommands = ["python -m unittest -q"]\n' > harness.toml
+          git add -A
+          git -c user.name=ci -c user.email=ci@example.com commit -qm init
+
+      - name: Good change passes
+        uses: ./
+        with:
+          working-directory: ${{ runner.temp }}/demo
+          base: main
+          upload-manifest: "false"
+
+      - name: Break the code
+        shell: bash
+        run: printf 'def add(a, b):\n    return a - b\n' > "$RUNNER_TEMP/demo/calc.py"
+
+      - name: Broken change is blocked
+        id: broken
+        continue-on-error: true
+        uses: ./
+        with:
+          working-directory: ${{ runner.temp }}/demo
+          base: main
+          upload-manifest: "false"
+
+      - name: Assert the gate blocked
+        shell: bash
+        env:
+          OUTCOME: ${{ steps.broken.outcome }}
+        run: |
+          test "$OUTCOME" = failure
+          grep -q '"verdict": "Blocked"' "$RUNNER_TEMP/AgentManifest.json"

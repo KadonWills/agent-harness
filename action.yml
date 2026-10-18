@@ -1,0 +1,67 @@
+# Reference GitHub Action: run the AgentHarness gate on a pull request.
+# Usage and caveats: docs/guides/github-action.md
+name: AgentHarness gate
+description: Execute agent changes in a network-denied sandbox and block the PR on failure.
+branding:
+  icon: shield
+  color: blue
+
+inputs:
+  agent:
+    description: Agent identifier checked against agents.allowed in harness.toml.
+    default: github-actions
+  base:
+    description: Ref to diff against. Defaults to the PR base branch (origin/<base>).
+    default: ""
+  working-directory:
+    description: A directory inside the repository to check (harness.toml lives at its git root).
+    default: "."
+  upload-manifest:
+    description: Upload AgentManifest.json as a workflow artifact.
+    default: "true"
+
+outputs:
+  manifest:
+    description: Path of the AgentManifest.json written by the run.
+    value: ${{ steps.gate.outputs.manifest }}
+
+runs:
+  using: composite
+  steps:
+    - uses: dtolnay/rust-toolchain@stable
+
+    - name: Build harness from this action's source
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        INSTALL_ROOT: ${{ runner.temp }}/agentharness
+      run: |
+        cargo install --locked --quiet --path "$ACTION_PATH/crates/harness-cli" --root "$INSTALL_ROOT"
+        echo "$INSTALL_ROOT/bin" >> "$GITHUB_PATH"
+
+    - name: Run the gate
+      id: gate
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        HARNESS_AGENT: ${{ inputs.agent }}
+        INPUT_BASE: ${{ inputs.base }}
+        PR_BASE: ${{ github.base_ref }}
+        MANIFEST: ${{ runner.temp }}/AgentManifest.json
+      run: |
+        base="$INPUT_BASE"
+        if [ -z "$base" ] && [ -n "$PR_BASE" ]; then base="origin/$PR_BASE"; fi
+        echo "manifest=$MANIFEST" >> "$GITHUB_OUTPUT"
+        if [ -n "$base" ]; then
+          harness run --manifest "$MANIFEST" --base "$base"
+        else
+          harness run --manifest "$MANIFEST"
+        fi
+
+    - name: Upload the manifest
+      if: always() && inputs.upload-manifest == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: agent-manifest
+        path: ${{ runner.temp }}/AgentManifest.json
+        if-no-files-found: ignore

@@ -12,6 +12,7 @@ use clap::{Parser, Subcommand};
 mod check;
 mod detect;
 mod git;
+mod hooks;
 mod init;
 mod intent;
 mod run;

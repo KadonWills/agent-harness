@@ -7,22 +7,29 @@ use anyhow::{bail, Context, Result};
 
 use crate::git::Git;
 use crate::settings::{config_path, CONFIG_FILE};
-use crate::{detect, Outcome};
+use crate::{detect, hooks, Outcome};
 
 /// Where `harness run` writes manifests; kept out of git.
 pub const STATE_DIR: &str = ".harness";
 
 #[derive(clap::Args)]
 pub struct Args {
-    /// Overwrite an existing harness.toml.
+    /// Overwrite an existing harness.toml (and replace unmanaged hooks).
     #[arg(long)]
     pub force: bool,
+    /// Install the pre-push hook. Works on an existing config, too.
+    #[arg(long)]
+    pub hooks: bool,
 }
 
 pub fn run(dir: &Path, args: &Args) -> Result<Outcome> {
     let git = Git::discover(dir)?;
     let root = git.root();
     let path = config_path(root);
+    if path.exists() && !args.force && args.hooks {
+        install_hooks(&git, false)?;
+        return Ok(Outcome::Pass);
+    }
     if path.exists() && !args.force {
         bail!(
             "{} already exists\nfix: edit it, or pass --force to regenerate it",
@@ -46,8 +53,20 @@ pub fn run(dir: &Path, args: &Args) -> Result<Outcome> {
             "No test command found: add one under [validation] commands before `harness run`."
         );
     }
+    if args.hooks {
+        install_hooks(&git, args.force)?;
+    } else {
+        eprintln!("Tip: `harness init --hooks` runs the gate before every push.");
+    }
     eprintln!("Next: `harness check`, then `harness run`.");
     Ok(Outcome::Pass)
+}
+
+fn install_hooks(git: &Git, force: bool) -> Result<()> {
+    for path in hooks::install(git, force)? {
+        eprintln!("Installed {}", path.display());
+    }
+    Ok(())
 }
 
 /// Prefer `main`, then `master`, then the current branch.
@@ -96,7 +115,14 @@ mod tests {
             ("package.json", r#"{"scripts":{"test":"jest"}}"#),
             (".gitignore", "node_modules"),
         ]);
-        let outcome = run(dir.path(), &Args { force: false }).expect("init");
+        let outcome = run(
+            dir.path(),
+            &Args {
+                force: false,
+                hooks: false,
+            },
+        )
+        .expect("init");
         assert_eq!(outcome, Outcome::Pass);
         let text = std::fs::read_to_string(dir.path().join(CONFIG_FILE)).expect("config");
         let cfg = HarnessConfig::from_toml(&text).expect("valid");
@@ -106,10 +132,35 @@ mod tests {
         assert_eq!(ignore, "node_modules\n.harness/\n");
 
         // Idempotent ignore entry; refuses to clobber without --force.
-        let err = run(dir.path(), &Args { force: false }).expect_err("exists");
+        let err = run(
+            dir.path(),
+            &Args {
+                force: false,
+                hooks: false,
+            },
+        )
+        .expect_err("exists");
         assert!(format!("{err:#}").contains("--force"));
-        run(dir.path(), &Args { force: true }).expect("forced");
+        run(
+            dir.path(),
+            &Args {
+                force: true,
+                hooks: false,
+            },
+        )
+        .expect("forced");
         let ignore = std::fs::read_to_string(dir.path().join(".gitignore")).expect("ignore");
         assert_eq!(ignore.matches(".harness/").count(), 1);
+
+        // --hooks on an existing config installs hooks and keeps the config.
+        let before = std::fs::read_to_string(dir.path().join(CONFIG_FILE)).expect("config");
+        let args = Args {
+            force: false,
+            hooks: true,
+        };
+        run(dir.path(), &args).expect("hooks only");
+        assert!(dir.path().join(".git/hooks/pre-push").is_file());
+        let after = std::fs::read_to_string(dir.path().join(CONFIG_FILE)).expect("config");
+        assert_eq!(before, after);
     }
 }

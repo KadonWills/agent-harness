@@ -188,6 +188,17 @@ impl Git {
         files.dedup();
         Ok(files)
     }
+
+    /// Path of the hooks directory (honours `core.hooksPath`).
+    pub fn hooks_dir(&self) -> Result<PathBuf> {
+        let out = self.run(&["rev-parse", "--git-path", "hooks"])?;
+        let path = PathBuf::from(out.trim());
+        Ok(if path.is_absolute() {
+            path
+        } else {
+            self.root.join(path)
+        })
+    }
 }
 
 #[cfg(test)]
@@ -225,6 +236,9 @@ pub(crate) mod testing {
     pub fn repo(files: &[(&str, &str)]) -> tempfile::TempDir {
         let dir = tempfile::tempdir().expect("tempdir");
         git(dir.path(), &["init", "-q", "-b", "main"]);
+        // Keep hook tests inside the temp repo even if the user has a
+        // global core.hooksPath.
+        git(dir.path(), &["config", "core.hooksPath", ".git/hooks"]);
         write(dir.path(), files);
         git(dir.path(), &["add", "-A"]);
         git(dir.path(), &["commit", "-q", "--allow-empty", "-m", "init"]);
