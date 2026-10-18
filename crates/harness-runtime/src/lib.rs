@@ -127,6 +127,13 @@ impl SessionReport {
     }
 }
 
+/// A step boundary, reported while a session runs (RFC-0002 §3).
+#[derive(Debug, Clone, Copy)]
+pub enum Progress<'a> {
+    StepStarted { phase: Phase, command: &'a str },
+    StepFinished { outcome: &'a StepOutcome },
+}
+
 /// A sandbox backend (Docker, Wasmtime, …).
 pub trait SandboxBackend: Send + Sync {
     fn name(&self) -> &'static str;
@@ -134,6 +141,29 @@ pub trait SandboxBackend: Send + Sync {
     fn check_available(&self) -> Result<(), Error>;
     /// Run setup then validation commands against a prepared snapshot.
     fn execute(&self, plan: &ExecutionPlan) -> Result<SessionReport, Error>;
+    /// Like [`Self::execute`], reporting each step as it starts and
+    /// finishes. The default replays the steps after `execute` returns;
+    /// backends override it to report live.
+    fn execute_observed(
+        &self,
+        plan: &ExecutionPlan,
+        observer: &mut dyn FnMut(Progress<'_>),
+    ) -> Result<SessionReport, Error> {
+        let report = self.execute(plan)?;
+        replay(&report, observer);
+        Ok(report)
+    }
+}
+
+/// Report already-finished steps to an observer, in order.
+pub fn replay(report: &SessionReport, observer: &mut dyn FnMut(Progress<'_>)) {
+    for outcome in &report.steps {
+        observer(Progress::StepStarted {
+            phase: outcome.report.phase,
+            command: &outcome.report.command,
+        });
+        observer(Progress::StepFinished { outcome });
+    }
 }
 
 /// The backend for a `sandbox.provider` value.
@@ -200,6 +230,60 @@ mod tests {
         let err = ExecutionPlan::from_config(&cfg, "s", PathBuf::new()).expect_err("must fail");
         assert!(err.to_string().contains("sandbox.timeout"));
         assert!(err.to_string().contains("fix:"));
+    }
+
+    struct Replayed;
+
+    impl SandboxBackend for Replayed {
+        fn name(&self) -> &'static str {
+            "replayed"
+        }
+        fn check_available(&self) -> Result<(), Error> {
+            Ok(())
+        }
+        fn execute(&self, plan: &ExecutionPlan) -> Result<SessionReport, Error> {
+            let steps = plan
+                .steps()
+                .map(|(phase, command)| StepOutcome {
+                    report: StepReport {
+                        phase,
+                        command: command.to_string(),
+                        exit_code: 0,
+                        duration_ms: 1,
+                        timed_out: false,
+                    },
+                    stdout: String::new(),
+                    stderr: String::new(),
+                })
+                .collect();
+            Ok(SessionReport {
+                steps,
+                egress: Vec::new(),
+            })
+        }
+    }
+
+    #[test]
+    fn default_observer_replays_steps_in_order() {
+        let cfg = HarnessConfig::from_toml("[validation]\nsetup = [\"a\"]\ncommands = [\"b\"]\n")
+            .expect("parses");
+        let plan = ExecutionPlan::from_config(&cfg, "s", PathBuf::new()).expect("plan");
+        let mut seen = Vec::new();
+        let report = Replayed
+            .execute_observed(&plan, &mut |p| {
+                seen.push(match p {
+                    Progress::StepStarted { command, .. } => format!("start {command}"),
+                    Progress::StepFinished { outcome } => {
+                        format!(
+                            "end {} {}",
+                            outcome.report.command, outcome.report.exit_code
+                        )
+                    }
+                })
+            })
+            .expect("runs");
+        assert!(report.passed());
+        assert_eq!(seen, ["start a", "end a 0", "start b", "end b 0"]);
     }
 
     #[test]
