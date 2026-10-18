@@ -19,7 +19,7 @@ use wasmtime_wasi::p2::pipe::MemoryOutputPipe;
 use wasmtime_wasi::{FsPerms, I32Exit, WasiCtxBuilder};
 
 use crate::docker::TIMEOUT_EXIT_CODE;
-use crate::{Error, ExecutionPlan, SandboxBackend, SessionReport, StepOutcome};
+use crate::{Error, ExecutionPlan, Progress, SandboxBackend, SessionReport, StepOutcome};
 
 /// Exit code recorded when a module traps (e.g. out of memory).
 pub const TRAP_EXIT_CODE: i32 = 134;
@@ -44,10 +44,19 @@ impl SandboxBackend for WasmtimeBackend {
     }
 
     fn execute(&self, plan: &ExecutionPlan) -> Result<SessionReport, Error> {
+        self.execute_observed(plan, &mut |_| {})
+    }
+
+    fn execute_observed(
+        &self,
+        plan: &ExecutionPlan,
+        observer: &mut dyn FnMut(Progress<'_>),
+    ) -> Result<SessionReport, Error> {
         let deadline = Instant::now() + plan.limits.timeout;
         let engine = engine()?;
         let mut report = SessionReport::default();
         for (phase, command) in plan.steps() {
+            observer(Progress::StepStarted { phase, command });
             let start = Instant::now();
             let (exit_code, timed_out, stdout, stderr) =
                 run_step(&engine, plan, command, deadline)?;
@@ -63,6 +72,7 @@ impl SandboxBackend for WasmtimeBackend {
                 stderr,
             };
             let ok = outcome.succeeded();
+            observer(Progress::StepFinished { outcome: &outcome });
             report.steps.push(outcome);
             if !ok {
                 break;
@@ -254,6 +264,30 @@ mod tests {
         assert_eq!(report.steps[1].report.exit_code, 3);
         assert_eq!(report.steps[1].stdout, "hello\n");
         assert!(report.egress.is_empty());
+    }
+
+    #[test]
+    fn progress_is_reported_live_and_stops_with_the_session() {
+        let dir = workspace(&[("hello.wat", HELLO), ("ok.wat", OK)]);
+        let p = plan(
+            dir.path(),
+            &["ok.wat", "hello.wat", "ok.wat"],
+            Duration::from_secs(30),
+        );
+        let mut events = Vec::new();
+        let report = WasmtimeBackend
+            .execute_observed(&p, &mut |e| {
+                events.push(match e {
+                    Progress::StepStarted { command, .. } => format!("start {command}"),
+                    Progress::StepFinished { outcome } => format!("end {}", outcome.succeeded()),
+                })
+            })
+            .expect("execute");
+        assert_eq!(report.steps.len(), 2);
+        assert_eq!(
+            events,
+            ["start ok.wat", "end true", "start hello.wat", "end false"]
+        );
     }
 
     #[test]

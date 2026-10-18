@@ -11,7 +11,9 @@ use std::time::Instant;
 
 use harness_core::manifest::{Phase, StepReport};
 
-use crate::{egress, process, Error, ExecutionPlan, SandboxBackend, SessionReport, StepOutcome};
+use crate::{
+    egress, process, Error, ExecutionPlan, Progress, SandboxBackend, SessionReport, StepOutcome,
+};
 
 /// Exit code recorded for a step killed by the session deadline.
 pub const TIMEOUT_EXIT_CODE: i32 = 124;
@@ -166,6 +168,14 @@ impl SandboxBackend for DockerBackend {
     }
 
     fn execute(&self, plan: &ExecutionPlan) -> Result<SessionReport, Error> {
+        self.execute_observed(plan, &mut |_| {})
+    }
+
+    fn execute_observed(
+        &self,
+        plan: &ExecutionPlan,
+        observer: &mut dyn FnMut(Progress<'_>),
+    ) -> Result<SessionReport, Error> {
         let deadline = Instant::now() + plan.limits.timeout;
         let name = container_name(&plan.session_id);
         let mut report = SessionReport::default();
@@ -204,6 +214,7 @@ impl SandboxBackend for DockerBackend {
                 network_open = false;
             }
 
+            observer(Progress::StepStarted { phase, command });
             let out = self.docker(&exec_args(&name, command), deadline)?;
             if plan.egress_denied(phase) {
                 let combined = format!("{}\n{}", out.stdout, out.stderr);
@@ -225,6 +236,7 @@ impl SandboxBackend for DockerBackend {
                 stderr: out.stderr,
             };
             let ok = outcome.succeeded();
+            observer(Progress::StepFinished { outcome: &outcome });
             report.steps.push(outcome);
             if !ok {
                 break;
