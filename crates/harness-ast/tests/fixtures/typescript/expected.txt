@@ -1,0 +1,10 @@
+FunctionAdded:Repo.fetchRemote
+FunctionRenamed:formatName->displayName
+FunctionChanged:Repo.constructor
+FunctionChanged:getUser
+SignatureChanged:getUser
+TypeChanged:Repo
+MemberRemoved:Repo.cache
+TypeChanged:User
+MemberRemoved:User.email
+DependencyAdded:axios
