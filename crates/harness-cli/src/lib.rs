@@ -18,6 +18,8 @@ pub mod scan;
 pub mod settings;
 #[cfg(feature = "tui")]
 pub mod tui;
+#[cfg(feature = "web")]
+pub mod web;
 
 /// What a command decided, mapped to exit codes 0 and 1.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
