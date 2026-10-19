@@ -276,6 +276,19 @@ fn conflict_fixes_need_the_csrf_header() {
 fn stop_shuts_the_server_down() {
     let c = Client::new(&[("harness.toml", "")]);
     let port = c.server.port;
+    let cookie = c.cookie();
     c.server.stop().expect("stops");
-    assert!(TcpStream::connect(("127.0.0.1", port)).is_err());
+    // Tests run in parallel, so another test's server may already have been
+    // given the freed port. Only a reply that accepts this server's token
+    // would mean it is still up.
+    let Ok(mut stream) = TcpStream::connect(("127.0.0.1", port)) else {
+        return;
+    };
+    let req = format!(
+        "GET /api/history HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nCookie: {cookie}\r\nConnection: close\r\n\r\n"
+    );
+    let mut raw = String::new();
+    let _ = stream.write_all(req.as_bytes());
+    let _ = stream.read_to_string(&mut raw);
+    assert!(!raw.starts_with("HTTP/1.1 200"), "still serving: {raw}");
 }
