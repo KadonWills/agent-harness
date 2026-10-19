@@ -6,6 +6,7 @@
 | An idea, or a change you want to sound out before an RFC | [Discussions → Ideas](https://github.com/KadonWills/agent-harness/discussions/categories/ideas) |
 | Something that is broken | [A bug report](https://github.com/KadonWills/agent-harness/issues/new?template=bug_report.yml) |
 | A security vulnerability | [Private vulnerability report](https://github.com/KadonWills/agent-harness/security/advisories/new) — never a public issue |
+| A Code of Conduct concern | **Report content → Report to repository admins** on the comment or thread; see [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md#how-to-report) |
 | Something you built with harness | [Discussions → Show and tell](https://github.com/KadonWills/agent-harness/discussions/categories/show-and-tell) |
 
 Before asking, two commands answer most questions:

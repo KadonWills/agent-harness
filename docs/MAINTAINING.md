@@ -98,6 +98,22 @@ original commits of the one that was just squashed:
 
    Skipping this makes *N+1* conflict whenever it edits a file *N* added.
 
+## Conduct reports
+
+Reports arrive under **Moderation → Reported content** in the repository
+settings, and through maintainers' GitHub profiles
+([CODE_OF_CONDUCT](../CODE_OF_CONDUCT.md#how-to-report)).
+
+1. Acknowledge privately within 72 hours. Never discuss a report in public
+   threads.
+2. A maintainer involved in the report hands it off. With one maintainer,
+   point the reporter to GitHub's Trust & Safety instead.
+3. Decide using the Covenant's enforcement ladder (correction, warning,
+   temporary ban, permanent ban). Use GitHub's tools to act: hide comments,
+   lock conversations, set interaction limits, or block users from the
+   repository.
+4. Keep a private note of the outcome so repeated behavior is visible.
+
 ## Dependencies
 
 Dependabot opens grouped weekly PRs for Cargo and GitHub Actions.
@@ -141,6 +157,8 @@ in the GitHub UI and recorded here so it can be rebuilt:
 - Merging: squash only, title from the PR, auto-merge allowed, "update
   branch" suggested, head branches deleted after merge.
 - Commits made on the web must be signed off (DCO).
+- Moderation: reported content accepted from all users, so conduct
+  reports reach maintainers privately (Settings → Moderation options).
 - Security: private vulnerability reporting, Dependabot alerts and
   security updates, secret scanning with push protection.
 - Actions: default token is read-only and cannot approve PRs.
