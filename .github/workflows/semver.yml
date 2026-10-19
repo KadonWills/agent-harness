@@ -26,7 +26,7 @@ jobs:
     name: API breakage (cargo-semver-checks)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Skip if acknowledged breaking change
         id: ack
         env:
@@ -38,7 +38,7 @@ jobs:
           else
             echo "acknowledged=false" >> "$GITHUB_OUTPUT"
           fi
-      - uses: obi1kenobi/cargo-semver-checks-action@v2
+      - uses: obi1kenobi/cargo-semver-checks-action@6b69fcf40e9b5fb17adeb57e4b6ecd020649a239 # v2
         if: steps.ack.outputs.acknowledged == 'false'
         with:
           package: harness-core, harness-ast, harness-runtime
