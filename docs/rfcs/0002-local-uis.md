@@ -1,6 +1,6 @@
 # RFC-0002: Local terminal and web UIs
 
-- Status: In review
+- Status: Accepted
 - Author(s): @KadonWills (agent-assisted, see PR)
 - Tracking issue: —
 

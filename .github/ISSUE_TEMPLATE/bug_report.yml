@@ -2,6 +2,13 @@ name: Bug report
 description: Something is broken
 labels: [bug, needs-triage]
 body:
+  - type: checkboxes
+    id: searched
+    attributes:
+      label: Before you file
+      options:
+        - label: I searched existing issues and discussions for this problem
+          required: true
   - type: input
     id: version
     attributes:
@@ -29,6 +36,12 @@ body:
       label: Expected vs actual
     validations:
       required: true
+  - type: textarea
+    id: check
+    attributes:
+      label: Output of `harness check --json`
+      description: Run it in the affected repository. Scrub anything sensitive.
+      render: json
   - type: textarea
     id: logs
     attributes:
