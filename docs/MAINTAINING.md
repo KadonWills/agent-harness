@@ -109,6 +109,10 @@ Dependabot opens grouped weekly PRs for Cargo and GitHub Actions.
 - A new transitive licence must be on `deny.toml`'s allowlist. Do not widen
   the allowlist to admit one dependency — trim its features or replace it.
 - Comment `@dependabot rebase` on a PR that has fallen behind `main`.
+- GitHub Actions are pinned to full commit SHAs with the version in a
+  trailing comment (`uses: actions/checkout@<sha> # v4.4.0`). Dependabot
+  bumps both. Pin any new action the same way; a tag can be moved to
+  malicious code, a SHA cannot.
 
 ## Releases
 
@@ -120,7 +124,9 @@ crates.io until crate naming is settled ([ADR-0005](adr/0005-crate-naming.md)).
 2. Bump versions in `Cargo.toml` in a `chore(cli): release vX.Y.Z` PR.
 3. After it merges, tag `main`: `git tag -a vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z`.
 4. `release.yml` builds binaries for Linux, macOS (x86_64, arm64), and
-   Windows and attaches them with SHA-256 checksums to a **draft** release.
+   Windows and attaches them with SHA-256 checksums to a **draft** release,
+   plus a signed build-provenance attestation that anyone can check with
+   `gh attestation verify <file> -R KadonWills/agent-harness`.
 5. Generate the notes in the draft (categories come from
    `.github/release.yml`), review, and publish.
 

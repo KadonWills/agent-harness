@@ -4,12 +4,17 @@ on:
   push:
     tags: ["v*"]
 
+# Read-only by default; only the release job may write, and only what it needs.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
     name: Build (${{ matrix.target }})
+    permissions:
+      contents: write      # attach binaries to the draft release
+      id-token: write      # sign the provenance attestation (Sigstore)
+      attestations: write  # store it, verifiable with `gh attestation verify`
     strategy:
       matrix:
         include:
@@ -23,11 +28,11 @@ jobs:
             os: windows-latest
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with:
           targets: ${{ matrix.target }}
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # v2
       - run: cargo build --release -p harness-cli --target ${{ matrix.target }}
       - name: Package
         shell: bash
@@ -39,7 +44,11 @@ jobs:
           tar czf "harness-${{ matrix.target }}.tar.gz" "$bin"
           shasum -a 256 "harness-${{ matrix.target }}.tar.gz" > "harness-${{ matrix.target }}.tar.gz.sha256" || \
             sha256sum "harness-${{ matrix.target }}.tar.gz" > "harness-${{ matrix.target }}.tar.gz.sha256"
-      - uses: softprops/action-gh-release@v2
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@8beda2b7ed98355c0e97c0a63bec38ae472e66c4 # v4
+        with:
+          subject-path: dist/*.tar.gz
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           files: |
             dist/*.tar.gz
