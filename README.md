@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/KadonWills/agent-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/KadonWills/agent-harness/actions/workflows/ci.yml)
 [![Security](https://github.com/KadonWills/agent-harness/actions/workflows/security.yml/badge.svg)](https://github.com/KadonWills/agent-harness/actions/workflows/security.yml)
+[![Release](https://img.shields.io/github/v/release/KadonWills/agent-harness)](https://github.com/KadonWills/agent-harness/releases/latest)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/KadonWills/agent-harness/badge)](https://scorecard.dev/viewer/?uri=github.com/KadonWills/agent-harness)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
 
@@ -40,15 +41,31 @@ agent edits ──► harness run ──► sandbox (no network) ──► AST d
 
 ## Quick start
 
-Nothing is published yet. `harness-cli` on crates.io is an unrelated tool,
-and crate names are still undecided (see [ADR-0005](docs/adr/0005-crate-naming.md)).
-Build from source:
+Download a prebuilt binary from the
+[latest release](https://github.com/KadonWills/agent-harness/releases/latest)
+(Linux x86_64, macOS arm64/x86_64, Windows x86_64; includes the terminal and
+web UIs):
+
+```bash
+target=aarch64-apple-darwin   # or x86_64-apple-darwin, x86_64-unknown-linux-gnu
+curl -fsSL "https://github.com/KadonWills/agent-harness/releases/latest/download/harness-$target.tar.gz" | tar xz
+sudo mv harness /usr/local/bin/
+```
+
+Each archive ships with a `.sha256` and signed build provenance
+(`gh attestation verify harness-$target.tar.gz --repo KadonWills/agent-harness`).
+Or build from source. The crates are not on crates.io: `harness-cli` there
+is an unrelated tool (see [ADR-0005](docs/adr/0005-crate-naming.md)).
 
 ```bash
 cargo install --locked --git https://github.com/KadonWills/agent-harness harness-cli
-# add `--features wasmtime` for the WASI sandbox backend,
+# add `--features wasmtime` for the WASI sandbox backend (Rust 1.96+),
 # `--features tui,web` for the terminal and web UIs
+```
 
+Then, in your repository:
+
+```bash
 cd your-repo
 harness init --hooks   # writes harness.toml; pre-commit = scan, pre-push = run
 harness check          # validates config + sandbox availability
