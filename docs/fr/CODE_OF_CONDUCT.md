@@ -1,4 +1,4 @@
-<!-- translated-from: CODE_OF_CONDUCT.md@6cf97db -->
+<!-- translated-from: CODE_OF_CONDUCT.md@a7ff2ce93f7f -->
 [English](../../CODE_OF_CONDUCT.md) | **Français**
 
 > Traduction de la version anglaise, qui fait foi en cas de divergence.

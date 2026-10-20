@@ -1,4 +1,4 @@
-<!-- translated-from: docs/guides/github-action.md@6cf97db -->
+<!-- translated-from: docs/guides/github-action.md@ddf4263a95f9 -->
 [English](../../guides/github-action.md) | **Français**
 
 > Traduction de la version anglaise, qui fait foi en cas de divergence.

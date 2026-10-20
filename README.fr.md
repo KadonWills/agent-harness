@@ -1,4 +1,4 @@
-<!-- translated-from: README.md@8d4808a -->
+<!-- translated-from: README.md@0e47168437fe -->
 [English](README.md) | **Français**
 
 > Traduction de la version anglaise, qui fait foi en cas de divergence.

@@ -1,4 +1,4 @@
-<!-- translated-from: CONTRIBUTING.md@6cf97db -->
+<!-- translated-from: CONTRIBUTING.md@fd496387f6e3 -->
 [English](../../CONTRIBUTING.md) | **Français**
 
 > Traduction de la version anglaise, qui fait foi en cas de divergence.

@@ -1,4 +1,4 @@
-<!-- translated-from: docs/README.md@8d4808a -->
+<!-- translated-from: docs/README.md@6f63a7d65b6d -->
 [English](../README.md) | **Français**
 
 > Traduction de la version anglaise, qui fait foi en cas de divergence.
@@ -48,10 +48,14 @@ langage, bibliothèque d'analyse syntaxique).
   (README, guides, contribution, support, sécurité, Code de conduite). Les
   documents de conception (PRD, feuille de route, architecture, RFC, ADR,
   MAINTAINING) restent en anglais.
-- Chaque page traduite indique en en-tête le commit source dont elle est issue
-  (`<!-- translated-from: <chemin>@<commit> -->`).
+- Chaque page traduite indique en en-tête sa source et l'empreinte git (blob)
+  du texte anglais dont elle est issue
+  (`<!-- translated-from: <chemin>@<empreinte> -->`). Cette empreinte désigne
+  le contenu du fichier : elle survit aux fusions squash.
 - `scripts/check-translations.sh` liste les pages dont la source anglaise a
-  changé depuis ce commit, et qui doivent donc être mises à jour.
+  changé depuis, et indique comment voir les différences. Après avoir mis une
+  page à jour, remplacez son empreinte par la sortie de
+  `git hash-object <source> | cut -c1-12`.
 
 ## Rédiger la documentation
 

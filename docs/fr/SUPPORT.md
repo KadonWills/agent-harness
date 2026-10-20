@@ -1,4 +1,4 @@
-<!-- translated-from: SUPPORT.md@6cf97db -->
+<!-- translated-from: SUPPORT.md@53f53d0b8b64 -->
 [English](../../SUPPORT.md) | **Français**
 
 > Traduction de la version anglaise, qui fait foi en cas de divergence.

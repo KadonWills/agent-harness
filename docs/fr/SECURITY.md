@@ -1,4 +1,4 @@
-<!-- translated-from: SECURITY.md@6cf97db -->
+<!-- translated-from: SECURITY.md@434cdc5c9b05 -->
 [English](../../SECURITY.md) | **Français**
 
 > Traduction de la version anglaise, qui fait foi en cas de divergence.

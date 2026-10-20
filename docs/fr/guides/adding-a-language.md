@@ -1,4 +1,4 @@
-<!-- translated-from: docs/guides/adding-a-language.md@6cf97db -->
+<!-- translated-from: docs/guides/adding-a-language.md@c6ab4eab17e4 -->
 [English](../../guides/adding-a-language.md) | **Français**
 
 > Traduction de la version anglaise, qui fait foi en cas de divergence.

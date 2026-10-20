@@ -1,4 +1,4 @@
-<!-- translated-from: docs/guides/local-uis.md@6cf97db -->
+<!-- translated-from: docs/guides/local-uis.md@ffc2faedbaf4 -->
 [English](../../guides/local-uis.md) | **Français**
 
 > Traduction de la version anglaise, qui fait foi en cas de divergence.
