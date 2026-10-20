@@ -1,5 +1,7 @@
 # Terminal and web UIs
 
+**English** | [Français](../fr/guides/local-uis.md)
+
 `harness tui` and `harness ui` show everything the CLI knows about one
 repository on one screen:
 

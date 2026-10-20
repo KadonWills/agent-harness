@@ -1,5 +1,7 @@
 # Documentation
 
+**English** | [Français](fr/README.md)
+
 Start with the row that matches what you are here to do.
 
 | I want to… | Read |
@@ -42,3 +44,18 @@ never needed an RFC (language choice, parsing library).
 - Errors quoted in docs must match what the binary prints, including the
   `fix:` line.
 - Doc-only PRs use the `docs` type and scope: `docs(docs): …`.
+
+## Translations
+
+User-facing pages are also in French, under [`fr/`](fr/README.md), with
+`README.fr.md` at the repository root. English is authoritative; design
+records (PRD, RFCs, ADRs, architecture, maintaining) stay English-only.
+
+- Each translation's first line records its source and the commit it was
+  translated from: `<!-- translated-from: docs/guides/local-uis.md@6cf97db -->`.
+- A PR that changes a translated English page does not have to update the
+  translation. `scripts/check-translations.sh` lists stale pages and the
+  diff to apply; bring the page up to date and move its marker to the new
+  commit.
+- Keep commands, config keys, CLI output, and error messages in English in
+  every language: they must match what the binary prints.

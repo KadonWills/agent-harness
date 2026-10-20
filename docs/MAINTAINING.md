@@ -146,6 +146,15 @@ crates.io until crate naming is settled ([ADR-0005](adr/0005-crate-naming.md)).
 5. Generate the notes in the draft (categories come from
    `.github/release.yml`), review, and publish.
 
+## Translations
+
+French pages live in `docs/fr/` and `README.fr.md`; the rules are in
+[docs/README.md](README.md#translations). Before a release, run
+`scripts/check-translations.sh`: stale pages are not a release blocker, but
+open a `documentation` issue listing them, labelled `good first issue` and
+`help wanted`, since updating a translation is a well-scoped first
+contribution.
+
 ## Repository settings
 
 Kept in code where GitHub allows it: `.github/` (templates, CODEOWNERS,

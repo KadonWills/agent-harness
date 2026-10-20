@@ -1,5 +1,7 @@
 # Running the gate in GitHub Actions
 
+**English** | [Français](../fr/guides/github-action.md)
+
 The repository root is a composite action. It builds `harness` from source
 (nothing is published yet, see ADR-0005), runs `harness run` against the PR's
 base branch, and uploads `AgentManifest.json` as an artifact. A blocked gate

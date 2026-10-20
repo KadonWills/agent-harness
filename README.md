@@ -1,5 +1,7 @@
 # AgentHarness
 
+**English** | [Français](README.fr.md)
+
 [![CI](https://github.com/KadonWills/agent-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/KadonWills/agent-harness/actions/workflows/ci.yml)
 [![Security](https://github.com/KadonWills/agent-harness/actions/workflows/security.yml/badge.svg)](https://github.com/KadonWills/agent-harness/actions/workflows/security.yml)
 [![Release](https://img.shields.io/github/v/release/KadonWills/agent-harness)](https://github.com/KadonWills/agent-harness/releases/latest)
@@ -15,8 +17,9 @@ concurrent agents, and blocks secrets and unvetted dependencies — all
 
 > Status: **pre-alpha.** Milestones v0.1–v0.4 (gate, structural diff,
 > multi-agent conflicts, security) are implemented per
-> [RFC-0001](docs/rfcs/0001-v0.1-v0.4-contracts.md). Nothing is published
-> yet. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> [RFC-0001](docs/rfcs/0001-v0.1-v0.4-contracts.md) and released as
+> [v0.1.0](https://github.com/KadonWills/agent-harness/releases/latest).
+> See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Why
 

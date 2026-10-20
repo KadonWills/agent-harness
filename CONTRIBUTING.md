@@ -1,5 +1,7 @@
 # Contributing to AgentHarness
 
+**English** | [Français](docs/fr/CONTRIBUTING.md)
+
 Thanks for helping build the guardrail layer for agentic engineering.
 This document is written for humans **and** for AI coding agents — if you
 are an agent, follow it exactly; the CI gate enforces most of it
