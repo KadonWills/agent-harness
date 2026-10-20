@@ -11,8 +11,8 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-# The language switcher line in the English page is not content.
-switcher='^[-+]\*\*English\*\* \| \[Français\]'
+# Blank lines and the language switcher in the English page are not content.
+ignore='^[-+][[:space:]]*$|^[-+]\*\*English\*\* [|] \[Français\]'
 
 stale=0
 while IFS= read -r page; do
@@ -28,7 +28,7 @@ while IFS= read -r page; do
     echo "GONE    $page: source $source no longer exists"
     stale=1
   elif git diff "$commit" HEAD -- "$source" | grep '^[-+]' | grep -v '^\(+++\|---\) ' |
-    grep -Evq "$switcher"; then
+    grep -Evq "$ignore"; then
     echo "STALE   $page: $source changed since $commit"
     echo "        see: git diff $commit HEAD -- $source"
     stale=1
