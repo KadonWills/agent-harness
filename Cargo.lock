@@ -862,7 +862,7 @@ name = "harness-ast"
 version = "0.1.0"
 dependencies = [
  "harness-core",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "tree-sitter",
  "tree-sitter-javascript",
  "tree-sitter-python",
@@ -898,7 +898,7 @@ version = "0.1.0"
 dependencies = [
  "serde",
  "serde_json",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "toml",
 ]
 
@@ -909,7 +909,7 @@ dependencies = [
  "harness-core",
  "regex",
  "tempfile",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "wasmtime",
  "wasmtime-wasi",
 ]
@@ -923,7 +923,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "toml",
 ]
 

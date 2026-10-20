@@ -24,7 +24,7 @@ harness-runtime = { path = "crates/harness-runtime", version = "0.1.0" }
 harness-security = { path = "crates/harness-security", version = "0.1.0" }
 
 anyhow = "1"
-thiserror = "1"
+thiserror = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 toml = "1.1"
