@@ -33,7 +33,8 @@ jobs:
         with:
           targets: ${{ matrix.target }}
       - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # v2
-      - run: cargo build --release -p harness-cli --target ${{ matrix.target }}
+      # Ship the terminal and web UIs; wasmtime stays opt-in (cargo install --features wasmtime).
+      - run: cargo build --release -p harness-cli --features tui,web --target ${{ matrix.target }}
       - name: Package
         shell: bash
         run: |
