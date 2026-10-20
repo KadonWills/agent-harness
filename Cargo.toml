@@ -33,7 +33,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 regex = "1"
 tempfile = "3"
-sha2 = "0.10"
+sha2 = "0.11"
 tree-sitter = "0.27"
 wasmtime = { version = "49", default-features = false, features = ["cranelift", "runtime", "std", "wat"] }
 wasmtime-wasi = { version = "49", default-features = false, features = ["p1"] }
