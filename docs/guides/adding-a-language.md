@@ -1,5 +1,7 @@
 # Adding a language parser
 
+**English** | [Français](../fr/guides/adding-a-language.md)
+
 Goal: a new language lands in **under 100 lines** of glue. Python is 29
 lines and JavaScript 37 (`crates/harness-ast/src/lang/`). If your PR is much
 bigger, the framework is failing you — open an issue.

@@ -1,5 +1,7 @@
 # Getting help
 
+**English** | [Français](docs/fr/SUPPORT.md)
+
 | You have… | Go to |
 |---|---|
 | A question about using or configuring harness | [Discussions → Q&A](https://github.com/KadonWills/agent-harness/discussions/categories/q-a) |

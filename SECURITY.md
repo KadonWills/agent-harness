@@ -1,5 +1,7 @@
 # Security Policy
 
+**English** | [Français](docs/fr/SECURITY.md)
+
 AgentHarness is a security tool: it decides whether code written by an
 autonomous agent may reach a repository. A flaw in it can let unsafe code
 through, so we treat reports against it accordingly.
