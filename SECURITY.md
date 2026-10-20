@@ -69,8 +69,8 @@ gives us reasonable time to fix the issue before disclosure.
 
 ## Supported versions
 
-Nothing has been released yet. Until the first release, fixes land on
-`main`. Pre-1.0, only the latest release receives fixes. Post-1.0, the
+Pre-1.0, only the latest release receives fixes; fixes land on `main`
+first. Post-1.0, the
 latest minor release of the current major does.
 
 ## How this repository is protected
