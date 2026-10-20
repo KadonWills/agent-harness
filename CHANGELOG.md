@@ -40,6 +40,9 @@ binary.
 - Release builds carry signed build-provenance attestations.
 - All workflow actions are pinned to commit SHAs; CodeQL, cargo-deny,
   gitleaks, and dependency review run on every pull request.
+- The Wasmtime backend uses Wasmtime 49.0.4, which fixes RUSTSEC-2026-0378
+  and RUSTSEC-2026-0379. Building with `--features wasmtime` needs Rust 1.96;
+  the default build supports Rust 1.90.
 
 [Unreleased]: https://github.com/KadonWills/agent-harness/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/KadonWills/agent-harness/releases/tag/v0.1.0
