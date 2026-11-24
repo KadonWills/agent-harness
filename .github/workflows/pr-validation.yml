@@ -27,7 +27,7 @@ jobs:
       # Test the PR author, not github.actor: github.actor is whoever triggered
       # the event, so a maintainer editing or syncing a Dependabot PR would
       # otherwise reinstate the failure.
-      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
+      - uses: amannn/action-semantic-pull-request@c5e23b7e584519ee15caa684cf60d056aa9f035f # v6.1.3
         if: github.event.pull_request.user.login != 'dependabot[bot]'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
